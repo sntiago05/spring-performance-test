@@ -1,4 +1,4 @@
-# HelpFlow: support-ticket-service + technician-dispatch-service + PostgreSQL + Prometheus + Grafana.
+# HelpFlow: web frontend + support-ticket-service + technician-dispatch-service + PostgreSQL + Prometheus + Grafana.
 # Requires a .env file (run ./scripts/setup-env.sh). Inside the network services talk by service name;
 # the published ports are only for the host.
 name: helpflow
@@ -51,6 +51,17 @@ services:
       BOOTSTRAP_TECHNICIAN_PASSWORD: ${BOOTSTRAP_TECHNICIAN_PASSWORD:-}
     ports:
       - "${SUPPORT_TICKET_PORT:-8080}:8080"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    image: helpflow/frontend:latest
+    depends_on:
+      support-ticket-service:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
     restart: unless-stopped
 
   prometheus:
