@@ -38,7 +38,7 @@
       "id": 2,
       "type": "stat",
       "title": "Service up (scrape)",
-      "description": "1 when Prometheus can scrape /actuator/prometheus of the service",
+      "description": "Shows whether Prometheus can scrape a service's /actuator/prometheus endpoint: 1 means the scrape succeeded and 0 means it failed.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -114,7 +114,7 @@
       "id": 3,
       "type": "stat",
       "title": "Overdue tickets (SLA deadline passed)",
-      "description": "Unresolved tickets past slaDueAt",
+      "description": "Current number of unresolved support tickets whose SLA deadline has passed. This metric comes from support-ticket-service.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -176,7 +176,7 @@
       "id": 4,
       "type": "stat",
       "title": "Escalated (24h)",
-      "description": "Tickets auto-escalated near their deadline",
+      "description": "Number of tickets automatically escalated as their SLA deadlines approached during the rolling last 24 hours.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -238,7 +238,7 @@
       "id": 5,
       "type": "stat",
       "title": "SLA breaches (24h)",
-      "description": "Tickets flagged as breached",
+      "description": "Number of tickets marked as having breached their SLA during the rolling last 24 hours.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -313,14 +313,14 @@
       "id": 7,
       "type": "timeseries",
       "title": "Requests per second",
-      "description": "Excludes actuator scrapes",
+      "description": "HTTP request rate by service, averaged over a rolling 1-minute window. Actuator endpoints are excluded. At very low traffic the rate can look close to zero; use the adjacent request-count panel for a clearer view.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 8,
         "x": 0,
         "y": 6
       },
@@ -367,15 +367,15 @@
       "id": 8,
       "type": "timeseries",
       "title": "Latency p95",
-      "description": "",
+      "description": "95th-percentile response time by service: 95% of measured requests completed within this time. Calculated over a rolling 5-minute window, in seconds; actuator endpoints are excluded.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
+        "w": 8,
+        "x": 16,
         "y": 6
       },
       "targets": [
@@ -418,10 +418,70 @@
       }
     },
     {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Requests in last minute",
+      "description": "Estimated number of HTTP requests in each rolling 1-minute window, grouped by service. Bars make individual low-volume requests easier to see than a per-second rate. Actuator endpoints are excluded; values can be fractional because Prometheus estimates counter increases between scrapes.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 6
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (application) (increase(http_server_requests_seconds_count{uri!~\"/actuator.*\"}[1m]))",
+          "legendFormat": "{{application}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "decimals": 1,
+          "custom": {
+            "axisLabel": "Requests in rolling 1-minute window",
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 55,
+            "showPoints": "always",
+            "pointSize": 5,
+            "spanNulls": false,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
       "id": 9,
       "type": "timeseries",
       "title": "Client errors (4xx) per second",
-      "description": "Validation, 401/403, 404, 409 answers",
+      "description": "4xx client-error rate grouped by service and status code, averaged over a rolling 1-minute window. Includes validation, authentication and authorization, not-found, and conflict responses; actuator endpoints are excluded.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -475,7 +535,7 @@
       "id": 10,
       "type": "timeseries",
       "title": "Server errors (5xx) per second",
-      "description": "",
+      "description": "5xx server-error rate by service, averaged over a rolling 1-minute window. Actuator endpoints are excluded.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -492,7 +552,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (application) (rate(http_server_requests_seconds_count{status=~\"5..\"}[1m]))",
+          "expr": "sum by (application) (rate(http_server_requests_seconds_count{status=~\"5..\",uri!~\"/actuator.*\"}[1m]))",
           "legendFormat": "{{application}} 5xx",
           "refId": "A"
         }
@@ -542,7 +602,7 @@
       "id": 12,
       "type": "bargauge",
       "title": "Tickets registered by category and priority (last hour)",
-      "description": "",
+      "description": "Estimated number of newly registered tickets during the rolling last hour, grouped by category and priority. Each bar is a ticket count; an empty category means no matching tickets were recorded.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -594,7 +654,7 @@
       "id": 13,
       "type": "timeseries",
       "title": "Mean first response and resolution time",
-      "description": "Time from creation until a technician starts / resolves the ticket",
+      "description": "Average elapsed time from ticket creation to a technician's first response and to resolution, in seconds. Each line uses events observed in a rolling 15-minute window; it will be empty when there are no matching events.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -657,7 +717,7 @@
       "id": 14,
       "type": "timeseries",
       "title": "Assignments by source",
-      "description": "DISPATCH = suggestion of technician-dispatch-service, RULES = internal rules, MANUAL = admin",
+      "description": "Estimated number of ticket assignments in the rolling last 5 minutes, grouped by source: DISPATCH is a suggestion from technician-dispatch-service, RULES is an internal rule, and MANUAL is an administrator assignment. Counter increases may be fractional estimates between scrapes.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -711,7 +771,7 @@
       "id": 15,
       "type": "timeseries",
       "title": "Escalations and SLA breaches",
-      "description": "",
+      "description": "Compares estimated escalation and SLA-breach event counts over the rolling last 5 minutes. Counter increases may be fractional estimates between scrapes.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -774,7 +834,7 @@
       "id": 16,
       "type": "timeseries",
       "title": "Authentication failures and access denied",
-      "description": "",
+      "description": "Shows authentication failures by reason and authorization denials (403) over the rolling last 5 minutes. The two series represent separate security events.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -850,7 +910,7 @@
       "id": 18,
       "type": "timeseries",
       "title": "JVM heap used",
-      "description": "",
+      "description": "Current JVM heap memory in use by service, shown in bytes. This excludes non-heap memory; compare with each service's configured heap limit when reviewing capacity.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -904,7 +964,7 @@
       "id": 19,
       "type": "timeseries",
       "title": "Process CPU usage",
-      "description": "",
+      "description": "CPU used by each service process as a fraction of one available CPU core: 0.5 represents 50%. This process-level metric is not total host CPU usage.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -958,7 +1018,7 @@
       "id": 20,
       "type": "timeseries",
       "title": "Database connections (HikariCP)",
-      "description": "Only support-ticket-service uses a database",
+      "description": "Connection-pool state for support-ticket-service (the only service using a database). Active connections are in use; pending connections are waiting for a free connection.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
