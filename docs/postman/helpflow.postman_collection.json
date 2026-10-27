@@ -635,7 +635,7 @@
                   "pm.collectionVariables.set('ticketId', t.id);",
                   "pm.test('Assigned or waiting for a technician', function () { pm.expect(['ASIGNADO','ABIERTO']).to.include(t.status); });",
                   "pm.test('SLA deadline is 8 h for ALTA', function () { pm.expect((new Date(t.slaDueAt) - new Date(t.createdAt)) / 3600000).to.eql(8); });",
-                  "if (t.technician) { pm.collectionVariables.set('technicianCode', t.technician.code); pm.collectionVariables.set('technicianEmail', t.technician.code.toLowerCase() + '@helpflow.example'); }"
+                  "if (t.technician) { pm.collectionVariables.set('technicianCode', t.technician.code); pm.collectionVariables.set('technicianId', t.technician.id); }"
                 ]
               }
             }
@@ -978,6 +978,87 @@
       "name": "4. Technician flow",
       "item": [
         {
+          "name": "Find the assigned technician (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/technicians/{{technicianId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "technicians",
+                "{{technicianId}}"
+              ],
+              "query": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "The ticket may have gone to any technician (seeded or created by an earlier run): look up its login account."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('technicianUserId', pm.response.json().userId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Find the technician's login e-mail (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{technicianUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{technicianUserId}}"
+              ],
+              "query": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('technicianEmail', pm.response.json().email);"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Login the assigned technician",
           "request": {
             "method": "POST",
@@ -1010,7 +1091,7 @@
             "auth": {
               "type": "noauth"
             },
-            "description": "Needs technicianPassword (BOOTSTRAP_TECHNICIAN_PASSWORD). The e-mail is derived from the ticket's technician code."
+            "description": "Needs technicianPassword (BOOTSTRAP_TECHNICIAN_PASSWORD). The e-mail comes from the previous two requests."
           },
           "event": [
             {
@@ -1852,7 +1933,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"document\": \"TEC-{{$timestamp}}\",\n  \"fullName\": \"Carlos Ruiz\",\n  \"email\": \"carlos.{{$timestamp}}@helpflow.example\",\n  \"password\": \"Tech!Pass2026\",\n  \"site\": \"BOGOTA\",\n  \"area\": \"IT Support\",\n  \"specialty\": \"RED\",\n  \"maxActiveTickets\": 3\n}",
+              "raw": "{\n  \"document\": \"TEC-{{$timestamp}}\",\n  \"fullName\": \"Carlos Ruiz\",\n  \"email\": \"carlos.{{$timestamp}}@helpflow.example\",\n  \"password\": \"{{technicianPassword}}\",\n  \"site\": \"BOGOTA\",\n  \"area\": \"IT Support\",\n  \"specialty\": \"RED\",\n  \"maxActiveTickets\": 3\n}",
               "options": {
                 "raw": {
                   "language": "json"
