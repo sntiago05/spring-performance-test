@@ -1,0 +1,9 @@
+**/target/
+.git/
+.idea/
+.env
+local-docs/
+enunciado_prueba.pdf
+docs/
+monitoring/
+**/*.md

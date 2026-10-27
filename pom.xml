@@ -18,6 +18,10 @@
   <name>helpflow-parent</name>
   <description>HelpFlow IT support platform: support-ticket-service and technician-dispatch-service</description>
 
+  <modules>
+    <module>technician-dispatch-service</module>
+  </modules>
+
   <properties>
     <java.version>21</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
