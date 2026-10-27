@@ -39,7 +39,6 @@ Requirements: Docker with Compose v2 (to run), JDK 21+ and Docker (to build and 
 ```bash
 ./scripts/setup-env.sh              # creates .env with random secrets (git-ignored)
 docker compose up -d --build        # PostgreSQL, backend services, frontend, Prometheus, Grafana
-./scripts/smoke-test.sh             # end-to-end check against the running stack
 ```
 
 | What | URL |
@@ -333,27 +332,11 @@ inside `@Transactional` use cases.
   ```bash
   docker compose exec -it db psql -U helpflow -d helpflow
   ```
-* **Clean duplicates automatically:**
-  Repeated smoke tests or collection runs may produce duplicate test tickets or registrations. Run:
-  ```bash
-  ./scripts/clean-duplicates.sh
-  ```
-  This identifies and removes duplicate tickets (keeping the closed/resolved one and releasing technician workload) and unreferenced duplicate user records inside a safe atomic transaction.
-* **Manual duplicate inspection and removal:**
+* **Inspect duplicates (read-only):** identity is enforced by the unique `document` and `email` columns, so two people with the
+  same name are legitimate; these queries only help to spot repeated test records:
   ```sql
-  -- Inspect duplicates
-  SELECT title, site, affected_asset, count(*) FROM tickets GROUP BY title, site, affected_asset HAVING count(*) > 1;
-  SELECT full_name, count(*) FROM users GROUP BY full_name HAVING count(*) > 1;
-
-  -- Remove duplicate tickets keeping the most progressed status (or lowest ID)
-  WITH ranked AS (
-    SELECT id, ROW_NUMBER() OVER (
-      PARTITION BY title, site, affected_asset
-      ORDER BY CASE status WHEN 'CERRADO' THEN 1 WHEN 'RESUELTO' THEN 2 WHEN 'EN_PROGRESO' THEN 3 ELSE 4 END, id ASC
-    ) AS rn FROM tickets
-  )
-  DELETE FROM ticket_assignments WHERE ticket_id IN (SELECT id FROM ranked WHERE rn > 1);
-  -- Then delete history and tickets for those IDs.
+  SELECT upper(trim(document)), count(*) FROM users GROUP BY 1 HAVING count(*) > 1;
+  SELECT title, site, affected_asset, count(*) FROM tickets GROUP BY 1, 2, 3 HAVING count(*) > 1;
   ```
 * **Full database reset (clean slate):**
   ```bash
@@ -382,8 +365,6 @@ inside `@Transactional` use cases.
 ```bash
 ./mvnw clean verify          # unit tests + Testcontainers integration tests (Docker required)
 ./mvnw test                  # unit tests only
-./scripts/smoke-test.sh      # end-to-end against docker compose
-./scripts/demo-sla.sh        # escalation / breach walkthrough with backdated tickets
 ```
 
 * **Unit (JUnit 5 + Mockito):** domain rules (state machine, SLA, capacity, assignment policy), every use case with
@@ -418,7 +399,7 @@ Secrets come from the environment (`.env`, never committed). Main variables:
 ├── frontend/                        Angular 22 + Tailwind CSS 4 web app + Dockerfile (nginx)
 ├── docker-compose.yml               db, both services, prometheus, grafana
 ├── monitoring/                      prometheus.yml, Grafana provisioning and dashboard
-├── scripts/                         setup-env, smoke-test, demo-sla
+├── scripts/                         setup-env.sh (generates .env with random secrets)
 └── docs/                            RUNBOOK, EVIDENCE, postman, images
 ```
 

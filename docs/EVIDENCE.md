@@ -10,7 +10,6 @@ Everything below was captured from the Docker Compose stack (`docker compose up 
   technician-dispatch-service   unit tests:        40, failures 0
   support-ticket-service         unit tests:       104, failures 0
   support-ticket-service         integration (Testcontainers PostgreSQL 16): 62, failures 0
-./scripts/smoke-test.sh          Result: 31 passed, 0 failed
 Postman collection (57 requests) 87 assertions passed, 0 failed
 ```
 
@@ -47,7 +46,7 @@ Prometheus targets (`/api/v1/targets`): `support-ticket-service` up, `technician
 
 ## Overdue tickets (SLA)
 
-`./scripts/demo-sla.sh` registers tickets, moves two back in time and runs the SLA review:
+Tickets registered through the API, two of them moved back in time in PostgreSQL, then `POST /tickets/escalations` (the SLA review the scheduler runs every minute):
 
 ```
 == Running the SLA review (the scheduler does this every minute)

@@ -38,11 +38,15 @@ docker compose up -d db                            # start / lift only the Postg
 ## 3. Verify it works (in this order)
 
 1. **Health:** `curl -s localhost:8080/actuator/health` and `curl -s localhost:8081/actuator/health` -> `{"status":"UP"}`.
-2. **Smoke test (about 30 s):** `./scripts/smoke-test.sh` -> `Result: 31 passed, 0 failed`.
+2. **End-to-end check:** run the Postman collection (section 5) -> every assertion passes.
 3. **Web Frontend:** open http://localhost:4200 to access the HelpFlow web application.
 4. **Swagger:** open http://localhost:8080/swagger-ui.html and follow section 4.
-5. **SLA walkthrough:** `./scripts/demo-sla.sh` registers tickets, moves two of them back in time in PostgreSQL, runs the SLA review
-   and prints escalated/breached tickets, their history and the metrics.
+5. **SLA walkthrough:** register a ticket (Swagger or the web app), then move it back in time and run the review:
+   ```bash
+   docker compose exec -T db psql -U helpflow -d helpflow -c "update tickets set created_at = created_at - interval '7 hours', sla_due_at = sla_due_at - interval '7 hours' where id = <ticket id>;"
+   ```
+   As admin call `POST /tickets/escalations`: an `ALTA` ticket (8 h window) is escalated at 80 %; moving it back more than its window also flags `slaBreached`.
+   Check `GET /tickets?overdue=true`, `GET /tickets/{id}/history` and `curl -s localhost:8080/actuator/prometheus | grep ^helpflow_tickets_`.
 6. **Prometheus:** http://localhost:9090/targets -> services `UP`. Query `helpflow_tickets_registered_total`.
 7. **Grafana:** http://localhost:3000 -> Dashboards -> HelpFlow -> *HelpFlow - Services Overview*.
 8. **Automated tests:** `./mvnw clean verify` (see section 6).
@@ -122,7 +126,7 @@ curl -s 'localhost:9090/api/v1/query?query=helpflow_tickets_overdue' | jq .
 | Tickets stay `ABIERTO` | No eligible technician (inactive, wrong specialty or at capacity) | `GET /tickets/{id}/history` shows `ASSIGNMENT_PENDING`; admin assigns with `PUT /tickets/{id}/assignment` or raises capacity with `PUT /technicians/{id}` |
 | Assignments always show `RULES` | The dispatch service is down or its suggestion is not eligible | `curl localhost:8081/actuator/health`; history text says `Dispatch suggestion ... rejected` when the rules overruled it |
 | Prometheus target `DOWN` | Service not healthy yet, or wrong target name | `docker compose ps`; targets use service names (`support-ticket-service:8080`), never `localhost` |
-| Grafana panels `No data` | No traffic yet (rates need data in the window) or Prometheus empty | Run `./scripts/smoke-test.sh`, wait 30 s, set the range to *Last 15 minutes* |
+| Grafana panels `No data` | No traffic yet (rates need data in the window) or Prometheus empty | Generate traffic (use the web app or the Postman collection), wait 30 s, set the range to *Last 15 minutes* |
 | Grafana login fails | Password in `.env` changed after first start (stored in the volume) | `docker compose exec grafana grafana cli admin reset-admin-password <new>` |
 | `./mvnw verify` fails with `Could not find a valid Docker environment` | Docker not running / no permission | Start Docker; add your user to the `docker` group |
 | Testcontainers pulls hang | No internet or registry limit | `docker pull postgres:16-alpine` beforehand |
@@ -143,15 +147,15 @@ docker compose up -d db
 docker compose exec -it db psql -U helpflow -d helpflow
 ```
 
-### 9.2 Clean duplicates (automated script)
+### 9.2 Inspect duplicates
 
-When repeated tests, scripts or manual registrations generate duplicate records:
+Identity is enforced by the unique `document` and `email` columns (the document is normalized to upper case); people with the same
+name are legitimate. To spot repeated test records:
 ```bash
-./scripts/clean-duplicates.sh
+docker compose exec -T db psql -U helpflow -d helpflow -c "select upper(trim(document)), count(*) from users group by 1 having count(*) > 1;"
+docker compose exec -T db psql -U helpflow -d helpflow -c "select title, site, affected_asset, count(*) from tickets group by 1,2,3 having count(*) > 1;"
 ```
-This runs an atomic SQL transaction that:
-1. Identifies duplicate tickets with identical title, site, and affected asset, keeps the one with the most advanced state (`CERRADO` > `RESUELTO` > `EN_PROGRESO` > `ASIGNADO` > `ABIERTO`), and deletes duplicates along with their history and assignments (releasing technician capacity).
-2. Identifies duplicate user records with the same name that are not referenced by tickets or technician profiles, and deletes them.
+The Postman collection registers fixed people once, so repeated runs do not create duplicates. To start over use 9.3.
 
 ### 9.3 Reset to a clean state (wipe everything)
 
