@@ -335,7 +335,7 @@ inside `@Transactional` use cases.
 * **Integration (Spring Boot Test + MockMvc + Testcontainers PostgreSQL):** registration/login, full lifecycle,
   role and ownership matrix, assignment rules, concurrent registrations, SLA escalation with a controllable clock,
   pagination/filters, N+1 guarantees (Hibernate statistics), Actuator access rules, i18n and OpenAPI completeness.
-* **Postman:** `docs/postman/` has the collection (54 requests with assertions) and a local environment.
+* **Postman:** `docs/postman/` has the collection (56 requests with assertions) and a local environment.
 
 ## Configuration
 
