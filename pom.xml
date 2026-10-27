@@ -20,6 +20,7 @@
 
   <modules>
     <module>technician-dispatch-service</module>
+    <module>support-ticket-service</module>
   </modules>
 
   <properties>
