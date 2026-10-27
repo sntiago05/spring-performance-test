@@ -2,7 +2,7 @@ package com.helpflow.supportticket.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.helpflow.supportticket.support.AbstractIntegrationTest;
 import jakarta.persistence.EntityManagerFactory;
 import java.util.List;
@@ -131,17 +131,17 @@ class TicketQueryIT extends AbstractIntegrationTest {
 
         assertThat(created.getResponse().getStatus()).isEqualTo(201);
         JsonNode technician = json(created);
-        assertThat(technician.get("code").asText()).matches("TEC-0(1[6-9]|[2-9]\\d)");
+        assertThat(technician.get("code").asString()).matches("TEC-0(1[6-9]|[2-9]\\d)");
         assertThat(technician.get("userId").isNull()).isFalse();
         assertThat(duplicate.getResponse().getStatus()).isEqualTo(409);
         // the new technician can log in with ROLE_TECNICO
         String token = login("carlos." + suffix + "@helpflow.example", PASSWORD);
-        assertThat(json(getJson("/users/me", token)).get("role").asText()).isEqualTo("ROLE_TECNICO");
+        assertThat(json(getJson("/users/me", token)).get("role").asString()).isEqualTo("ROLE_TECNICO");
 
         MvcResult updated = putJson("/technicians/" + technician.get("id").asLong(), admin, Map.of("fullName",
                 "Carlos Ruiz Mora", "specialty", "SOFTWARE", "site", "CALI", "maxActiveTickets", 4, "status", "INACTIVO"));
-        assertThat(json(updated).get("specialty").asText()).isEqualTo("SOFTWARE");
-        assertThat(json(updated).get("status").asText()).isEqualTo("INACTIVO");
+        assertThat(json(updated).get("specialty").asString()).isEqualTo("SOFTWARE");
+        assertThat(json(updated).get("status").asString()).isEqualTo("INACTIVO");
         assertThat(json(getJson("/technicians?status=INACTIVO&specialty=SOFTWARE", admin)).get("totalElements").asInt())
                 .isEqualTo(1);
     }

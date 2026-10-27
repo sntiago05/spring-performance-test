@@ -2,7 +2,7 @@ package com.helpflow.supportticket.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.helpflow.supportticket.support.AbstractIntegrationTest;
 import java.time.Duration;
 import java.time.Instant;
@@ -22,25 +22,25 @@ class TicketLifecycleIT extends AbstractIntegrationTest {
 
         JsonNode ticket = createTicket(user, "RED", "ALTA", "BOGOTA");
 
-        assertThat(ticket.get("status").asText()).isEqualTo("ASIGNADO");
-        assertThat(ticket.get("technician").get("code").asText()).isEqualTo("TEC-008");
-        assertThat(ticket.get("requester").get("fullName").asText()).startsWith("User ");
-        Instant created = Instant.parse(ticket.get("createdAt").asText());
-        Instant due = Instant.parse(ticket.get("slaDueAt").asText());
+        assertThat(ticket.get("status").asString()).isEqualTo("ASIGNADO");
+        assertThat(ticket.get("technician").get("code").asString()).isEqualTo("TEC-008");
+        assertThat(ticket.get("requester").get("fullName").asString()).startsWith("User ");
+        Instant created = Instant.parse(ticket.get("createdAt").asString());
+        Instant due = Instant.parse(ticket.get("slaDueAt").asString());
         assertThat(Duration.between(created, due)).isEqualTo(Duration.ofHours(8));
 
         long id = ticket.get("id").asLong();
         JsonNode assignments = json(getJson("/tickets/" + id + "/assignments", user));
         assertThat(assignments).hasSize(1);
-        assertThat(assignments.get(0).get("source").asText()).isEqualTo("DISPATCH");
+        assertThat(assignments.get(0).get("source").asString()).isEqualTo("DISPATCH");
         assertThat(assignments.get(0).get("estimatedHours").asInt()).isEqualTo(4);
         assertThat(assignments.get(0).get("withinSla").asBoolean()).isTrue();
         assertThat(assignments.get(0).get("active").asBoolean()).isTrue();
 
         JsonNode history = json(getJson("/tickets/" + id + "/history", user));
-        assertThat(history.findValuesAsText("action")).containsExactly("CREATED", "ASSIGNED");
-        assertThat(history.get(0).get("performedBy").asText()).startsWith("user.");
-        assertThat(history.get(1).get("performedBy").asText()).isEqualTo("SYSTEM");
+        assertThat(history.findValuesAsString("action")).containsExactly("CREATED", "ASSIGNED");
+        assertThat(history.get(0).get("performedBy").asString()).startsWith("user.");
+        assertThat(history.get(1).get("performedBy").asString()).isEqualTo("SYSTEM");
     }
 
     @Test
@@ -51,8 +51,8 @@ class TicketLifecycleIT extends AbstractIntegrationTest {
 
         for (int i = 0; i < priorities.length; i++) {
             JsonNode ticket = createTicket(user, "OTRO", priorities[i], "BOGOTA");
-            Duration window = Duration.between(Instant.parse(ticket.get("createdAt").asText()),
-                    Instant.parse(ticket.get("slaDueAt").asText()));
+            Duration window = Duration.between(Instant.parse(ticket.get("createdAt").asString()),
+                    Instant.parse(ticket.get("slaDueAt").asString()));
             assertThat(window).as(priorities[i]).isEqualTo(Duration.ofHours(expectedHours[i]));
         }
     }
@@ -73,19 +73,19 @@ class TicketLifecycleIT extends AbstractIntegrationTest {
                 Map.of("status", "CERRADO", "observations", "Confirmed by the user"));
 
         assertThat(started.getResponse().getStatus()).isEqualTo(200);
-        assertThat(json(started).get("status").asText()).isEqualTo("EN_PROGRESO");
+        assertThat(json(started).get("status").asString()).isEqualTo("EN_PROGRESO");
         assertThat(json(started).get("firstResponseAt").isNull()).isFalse();
         assertThat(json(resolved).get("resolvedAt").isNull()).isFalse();
         assertThat(json(resolved).get("slaBreached").asBoolean()).isFalse();
-        assertThat(json(closed).get("status").asText()).isEqualTo("CERRADO");
+        assertThat(json(closed).get("status").asString()).isEqualTo("CERRADO");
 
         JsonNode history = json(getJson("/tickets/" + id + "/history", user));
-        assertThat(history.findValuesAsText("action"))
+        assertThat(history.findValuesAsString("action"))
                 .containsExactly("CREATED", "ASSIGNED", "STATUS_CHANGED", "STATUS_CHANGED", "STATUS_CHANGED");
-        assertThat(history.get(2).get("fromStatus").asText()).isEqualTo("ASIGNADO");
-        assertThat(history.get(2).get("toStatus").asText()).isEqualTo("EN_PROGRESO");
-        assertThat(history.get(2).get("observations").asText()).isEqualTo("Checking the access point");
-        assertThat(history.get(2).get("performedBy").asText()).isEqualTo("tec-008@helpflow.example");
+        assertThat(history.get(2).get("fromStatus").asString()).isEqualTo("ASIGNADO");
+        assertThat(history.get(2).get("toStatus").asString()).isEqualTo("EN_PROGRESO");
+        assertThat(history.get(2).get("observations").asString()).isEqualTo("Checking the access point");
+        assertThat(history.get(2).get("performedBy").asString()).isEqualTo("tec-008@helpflow.example");
     }
 
     @Test
@@ -99,9 +99,9 @@ class TicketLifecycleIT extends AbstractIntegrationTest {
 
         assertThat(skipped.getResponse().getStatus()).isEqualTo(409);
         JsonNode problem = json(skipped);
-        assertThat(problem.get("type").asText()).isEqualTo("urn:helpflow:problem:invalid-transition");
-        assertThat(problem.get("detail").asText()).contains("ASIGNADO", "RESUELTO");
-        assertThat(json(getJson("/tickets/" + id, technician)).get("status").asText()).isEqualTo("ASIGNADO");
+        assertThat(problem.get("type").asString()).isEqualTo("urn:helpflow:problem:invalid-transition");
+        assertThat(problem.get("detail").asString()).contains("ASIGNADO", "RESUELTO");
+        assertThat(json(getJson("/tickets/" + id, technician)).get("status").asString()).isEqualTo("ASIGNADO");
     }
 
     @Test
@@ -134,10 +134,10 @@ class TicketLifecycleIT extends AbstractIntegrationTest {
 
         assertThat(result.getResponse().getStatus()).isEqualTo(400);
         JsonNode problem = json(result);
-        assertThat(problem.get("type").asText()).isEqualTo("urn:helpflow:problem:validation-error");
-        assertThat(problem.get("errors").findValuesAsText("field")).contains("title", "description", "site");
-        assertThat(problem.get("timestamp").asText()).isNotBlank();
-        assertThat(problem.get("traceId").asText()).isEqualTo(result.getResponse().getHeader("X-Trace-Id"));
+        assertThat(problem.get("type").asString()).isEqualTo("urn:helpflow:problem:validation-error");
+        assertThat(problem.get("errors").findValuesAsString("field")).contains("title", "description", "site");
+        assertThat(problem.get("timestamp").asString()).isNotBlank();
+        assertThat(problem.get("traceId").asString()).isEqualTo(result.getResponse().getHeader("X-Trace-Id"));
     }
 
     @Test
@@ -155,12 +155,12 @@ class TicketLifecycleIT extends AbstractIntegrationTest {
                 Map.of("status", "CANCELADO", "observations", "Duplicate of ticket 4, same asset"));
 
         assertThat(toAssigned.getResponse().getStatus()).isEqualTo(400);
-        assertThat(json(toAssigned).get("errors").findValuesAsText("field")).contains("status");
+        assertThat(json(toAssigned).get("errors").findValuesAsString("field")).contains("status");
         assertThat(shortCancel.getResponse().getStatus()).isEqualTo(400);
-        assertThat(json(shortCancel).get("errors").findValuesAsText("field")).contains("observations");
+        assertThat(json(shortCancel).get("errors").findValuesAsString("field")).contains("observations");
         assertThat(noObservations.getResponse().getStatus()).isEqualTo(400);
         assertThat(cancelled.getResponse().getStatus()).isEqualTo(200);
-        assertThat(json(cancelled).get("status").asText()).isEqualTo("CANCELADO");
+        assertThat(json(cancelled).get("status").asString()).isEqualTo("CANCELADO");
     }
 
     @Test
@@ -172,7 +172,7 @@ class TicketLifecycleIT extends AbstractIntegrationTest {
                 "site", "BOGOTA", "affectedAsset", "RACK-1"));
 
         assertThat(result.getResponse().getStatus()).isEqualTo(201);
-        assertThat(json(result).get("priority").asText()).isEqualTo("CRITICA");
+        assertThat(json(result).get("priority").asString()).isEqualTo("CRITICA");
     }
 
     @Test
@@ -187,6 +187,6 @@ class TicketLifecycleIT extends AbstractIntegrationTest {
         MvcResult result = postJson("/tickets", token, ticketBody("RED", "ALTA", "BOGOTA"));
 
         assertThat(result.getResponse().getStatus()).isEqualTo(422);
-        assertThat(json(result).get("type").asText()).isEqualTo("urn:helpflow:problem:user-inactive");
+        assertThat(json(result).get("type").asString()).isEqualTo("urn:helpflow:problem:user-inactive");
     }
 }

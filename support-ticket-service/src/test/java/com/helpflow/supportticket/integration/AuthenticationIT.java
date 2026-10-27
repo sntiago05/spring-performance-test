@@ -2,7 +2,7 @@ package com.helpflow.supportticket.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.helpflow.supportticket.support.AbstractIntegrationTest;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -23,8 +23,8 @@ class AuthenticationIT extends AbstractIntegrationTest {
 
         assertThat(result.getResponse().getStatus()).isEqualTo(201);
         JsonNode body = json(result);
-        assertThat(body.get("role").asText()).isEqualTo("ROLE_USUARIO");
-        assertThat(body.get("status").asText()).isEqualTo("ACTIVO");
+        assertThat(body.get("role").asString()).isEqualTo("ROLE_USUARIO");
+        assertThat(body.get("status").asString()).isEqualTo("ACTIVO");
         assertThat(body.has("password")).isFalse();
         assertThat(body.has("passwordHash")).isFalse();
         assertThat(jdbc.queryForObject("select password_hash from users where email = ?", String.class,
@@ -42,9 +42,9 @@ class AuthenticationIT extends AbstractIntegrationTest {
                 registration(suffix, "other." + suffix + "@helpflow.example"));
 
         assertThat(sameEmail.getResponse().getStatus()).isEqualTo(409);
-        assertThat(json(sameEmail).get("type").asText()).isEqualTo("urn:helpflow:problem:duplicate-email");
+        assertThat(json(sameEmail).get("type").asString()).isEqualTo("urn:helpflow:problem:duplicate-email");
         assertThat(sameDocument.getResponse().getStatus()).isEqualTo(409);
-        assertThat(json(sameDocument).get("type").asText()).isEqualTo("urn:helpflow:problem:duplicate-document");
+        assertThat(json(sameDocument).get("type").asString()).isEqualTo("urn:helpflow:problem:duplicate-document");
     }
 
     @Test
@@ -57,8 +57,8 @@ class AuthenticationIT extends AbstractIntegrationTest {
 
         assertThat(result.getResponse().getStatus()).isEqualTo(400);
         JsonNode problem = json(result);
-        assertThat(problem.get("title").asText()).isEqualTo("Validation failed");
-        assertThat(problem.get("errors").findValuesAsText("field")).contains("email", "password");
+        assertThat(problem.get("title").asString()).isEqualTo("Validation failed");
+        assertThat(problem.get("errors").findValuesAsString("field")).contains("email", "password");
     }
 
     @Test
@@ -71,13 +71,13 @@ class AuthenticationIT extends AbstractIntegrationTest {
 
         assertThat(result.getResponse().getStatus()).isEqualTo(200);
         JsonNode body = json(result);
-        assertThat(body.get("tokenType").asText()).isEqualTo("Bearer");
-        assertThat(body.get("accessToken").asText().split("\\.")).hasSize(3);
-        assertThat(body.get("user").get("email").asText()).isEqualTo(email);
+        assertThat(body.get("tokenType").asString()).isEqualTo("Bearer");
+        assertThat(body.get("accessToken").asString().split("\\.")).hasSize(3);
+        assertThat(body.get("user").get("email").asString()).isEqualTo(email);
 
-        MvcResult me = getJson("/users/me", body.get("accessToken").asText());
+        MvcResult me = getJson("/users/me", body.get("accessToken").asString());
         assertThat(me.getResponse().getStatus()).isEqualTo(200);
-        assertThat(json(me).get("email").asText()).isEqualTo(email);
+        assertThat(json(me).get("email").asString()).isEqualTo(email);
     }
 
     @Test
@@ -107,7 +107,7 @@ class AuthenticationIT extends AbstractIntegrationTest {
         MvcResult restored = postJson("/auth/login", null, Map.of("email", email, "password", PASSWORD));
 
         assertThat(blocked.getResponse().getStatus()).isEqualTo(403);
-        assertThat(json(blocked).get("type").asText()).isEqualTo("urn:helpflow:problem:account-inactive");
+        assertThat(json(blocked).get("type").asString()).isEqualTo("urn:helpflow:problem:account-inactive");
         assertThat(restored.getResponse().getStatus()).isEqualTo(200);
     }
 
@@ -124,8 +124,8 @@ class AuthenticationIT extends AbstractIntegrationTest {
             assertThat(result.getResponse().getHeader("WWW-Authenticate")).isEqualTo("Bearer");
             JsonNode problem = json(result);
             assertThat(problem.get("status").asInt()).isEqualTo(401);
-            assertThat(problem.get("traceId").asText()).isNotBlank();
-            assertThat(problem.get("instance").asText()).isEqualTo("/tickets");
+            assertThat(problem.get("traceId").asString()).isNotBlank();
+            assertThat(problem.get("instance").asString()).isEqualTo("/tickets");
         }
     }
 
@@ -144,8 +144,8 @@ class AuthenticationIT extends AbstractIntegrationTest {
                 Map.of("fullName", "Hacked", "site", "CALI", "area", "X"));
 
         assertThat(updated.getResponse().getStatus()).isEqualTo(200);
-        assertThat(json(updated).get("fullName").asText()).isEqualTo("Laura Edited");
-        assertThat(json(updated).get("email").asText()).isEqualTo(email); // immutable
+        assertThat(json(updated).get("fullName").asString()).isEqualTo("Laura Edited");
+        assertThat(json(updated).get("email").asString()).isEqualTo(email); // immutable
         assertThat(foreign.getResponse().getStatus()).isEqualTo(403);
         assertThat(foreignEdit.getResponse().getStatus()).isEqualTo(403);
     }

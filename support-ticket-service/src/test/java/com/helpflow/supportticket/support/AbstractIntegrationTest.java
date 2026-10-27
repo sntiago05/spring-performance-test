@@ -8,8 +8,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.helpflow.supportticket.application.port.out.TechnicianDispatchPort;
 import com.helpflow.supportticket.domain.exception.TechnicianDispatchUnavailableException;
 import com.helpflow.supportticket.domain.model.Availability;
@@ -20,7 +20,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -145,7 +145,7 @@ public abstract class AbstractIntegrationTest {
 
     protected String login(String email, String password) throws Exception {
         MvcResult result = postJson("/auth/login", null, Map.of("email", email, "password", password));
-        return json(result).get("accessToken").asText();
+        return json(result).get("accessToken").asString();
     }
 
     protected String adminToken() throws Exception {

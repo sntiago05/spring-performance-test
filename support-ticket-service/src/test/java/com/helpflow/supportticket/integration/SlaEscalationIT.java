@@ -3,7 +3,7 @@ package com.helpflow.supportticket.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.helpflow.supportticket.support.AbstractIntegrationTest;
 import java.time.Duration;
 import java.util.Map;
@@ -44,14 +44,14 @@ class SlaEscalationIT extends AbstractIntegrationTest {
         assertThat(due.get("breached").asInt()).isZero();
         assertThat(again.get("escalated").asInt()).isZero(); // idempotent
         JsonNode escalated = json(getJson("/tickets/" + id, user));
-        assertThat(escalated.get("priority").asText()).isEqualTo("ALTA");
+        assertThat(escalated.get("priority").asString()).isEqualTo("ALTA");
         assertThat(escalated.get("escalated").asBoolean()).isTrue();
         assertThat(escalated.get("slaBreached").asBoolean()).isFalse();
-        assertThat(escalated.get("slaDueAt").asText()).isEqualTo(ticket.get("slaDueAt").asText());
+        assertThat(escalated.get("slaDueAt").asString()).isEqualTo(ticket.get("slaDueAt").asString());
         JsonNode history = json(getJson("/tickets/" + id + "/history", user));
-        assertThat(history.findValuesAsText("action")).containsExactly("CREATED", "ASSIGNED", "ESCALATED");
-        assertThat(history.get(2).get("performedBy").asText()).isEqualTo("SYSTEM");
-        assertThat(history.get(2).get("observations").asText()).contains("MEDIA -> ALTA");
+        assertThat(history.findValuesAsString("action")).containsExactly("CREATED", "ASSIGNED", "ESCALATED");
+        assertThat(history.get(2).get("performedBy").asString()).isEqualTo("SYSTEM");
+        assertThat(history.get(2).get("observations").asString()).contains("MEDIA -> ALTA");
     }
 
     @Test
@@ -71,7 +71,7 @@ class SlaEscalationIT extends AbstractIntegrationTest {
         assertThat(overdue.get("content").get(0).get("slaBreached").asBoolean()).isTrue();
         assertThat(json(getJson("/tickets/" + onTime, user)).get("slaBreached").asBoolean()).isFalse();
         JsonNode history = json(getJson("/tickets/" + late + "/history", user));
-        assertThat(history.findValuesAsText("action")).contains("ESCALATED", "SLA_BREACHED");
+        assertThat(history.findValuesAsString("action")).contains("ESCALATED", "SLA_BREACHED");
         // running the review again does not flag it a second time
         assertThat(runReview(admin).get("breached").asInt()).isZero();
     }
@@ -91,7 +91,7 @@ class SlaEscalationIT extends AbstractIntegrationTest {
 
         assertThat(json(resolved).get("slaBreached").asBoolean()).isTrue();
         assertThat(json(getJson("/tickets?overdue=true", admin)).get("totalElements").asInt()).isZero();
-        assertThat(json(getJson("/tickets/" + id + "/history", user)).findValuesAsText("action"))
+        assertThat(json(getJson("/tickets/" + id + "/history", user)).findValuesAsString("action"))
                 .contains("SLA_BREACHED");
     }
 
@@ -119,10 +119,10 @@ class SlaEscalationIT extends AbstractIntegrationTest {
 
         assertThat(updated.getResponse().getStatus()).isEqualTo(200);
         assertThat(json(updated).get("resolutionHours").asInt()).isEqualTo(2);
-        assertThat(Duration.between(java.time.Instant.parse(before.get("createdAt").asText()),
-                java.time.Instant.parse(before.get("slaDueAt").asText()))).isEqualTo(Duration.ofHours(8));
-        assertThat(Duration.between(java.time.Instant.parse(after.get("createdAt").asText()),
-                java.time.Instant.parse(after.get("slaDueAt").asText()))).isEqualTo(Duration.ofHours(2));
+        assertThat(Duration.between(java.time.Instant.parse(before.get("createdAt").asString()),
+                java.time.Instant.parse(before.get("slaDueAt").asString()))).isEqualTo(Duration.ofHours(8));
+        assertThat(Duration.between(java.time.Instant.parse(after.get("createdAt").asString()),
+                java.time.Instant.parse(after.get("slaDueAt").asString()))).isEqualTo(Duration.ofHours(2));
         // the new 50% threshold escalates the new ticket after 1 hour
         clock.advance(Duration.ofHours(1));
         runReview(admin);
@@ -144,7 +144,7 @@ class SlaEscalationIT extends AbstractIntegrationTest {
         assertThat(zeroHours.getResponse().getStatus()).isEqualTo(400);
         assertThat(hugeThreshold.getResponse().getStatus()).isEqualTo(400);
         assertThat(unknownPriority.getResponse().getStatus()).isEqualTo(400);
-        assertThat(json(unknownPriority).get("type").asText()).endsWith("invalid-parameter");
+        assertThat(json(unknownPriority).get("type").asString()).endsWith("invalid-parameter");
     }
 
     @Test

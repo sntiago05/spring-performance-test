@@ -71,7 +71,7 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
             return HttpStatus.CONFLICT;
         }
         if (ex instanceof BusinessRuleViolationException) {
-            return HttpStatus.UNPROCESSABLE_ENTITY;
+            return HttpStatus.UNPROCESSABLE_CONTENT;
         }
         if (ex instanceof ForbiddenOperationException || ex instanceof AccountInactiveException) {
             return HttpStatus.FORBIDDEN;

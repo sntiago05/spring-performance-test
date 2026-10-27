@@ -2,7 +2,7 @@ package com.helpflow.supportticket.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.helpflow.supportticket.support.AbstractIntegrationTest;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,13 +36,13 @@ class TicketAssignmentIT extends AbstractIntegrationTest {
 
         // Same site and specialty tie at load 0 -> lowest code (TEC-007, RED/BOGOTA). The second ticket goes
         // to the generalist of the same site (TEC-013) because TEC-007 now carries one ticket.
-        assertThat(first.get("technician").get("code").asText()).isEqualTo("TEC-007");
-        assertThat(second.get("technician").get("code").asText()).isEqualTo("TEC-013");
+        assertThat(first.get("technician").get("code").asString()).isEqualTo("TEC-007");
+        assertThat(second.get("technician").get("code").asString()).isEqualTo("TEC-013");
         JsonNode source = assignments(first.get("id").asLong(), user);
-        assertThat(source.get(0).get("source").asText()).isEqualTo("RULES");
+        assertThat(source.get(0).get("source").asString()).isEqualTo("RULES");
         assertThat(source.get(0).get("estimatedHours").isNull()).isTrue();
         JsonNode history = json(getJson("/tickets/" + first.get("id").asLong() + "/history", user));
-        assertThat(history.get(1).get("observations").asText()).contains("TEC-007", "RULES", "unavailable");
+        assertThat(history.get(1).get("observations").asString()).contains("TEC-007", "RULES", "unavailable");
     }
 
     @Test
@@ -51,9 +51,9 @@ class TicketAssignmentIT extends AbstractIntegrationTest {
 
         JsonNode ticket = createTicket(newUserToken(), "RED", "ALTA", "BOGOTA");
 
-        assertThat(ticket.get("technician").get("code").asText()).isEqualTo("TEC-007");
+        assertThat(ticket.get("technician").get("code").asString()).isEqualTo("TEC-007");
         JsonNode history = json(getJson("/tickets/" + ticket.get("id").asLong() + "/history", adminToken()));
-        assertThat(history.get(1).get("observations").asText()).contains("Dispatch suggestion TEC-004 rejected");
+        assertThat(history.get(1).get("observations").asString()).contains("Dispatch suggestion TEC-004 rejected");
     }
 
     @Test
@@ -62,8 +62,8 @@ class TicketAssignmentIT extends AbstractIntegrationTest {
 
         JsonNode ticket = createTicket(newUserToken(), "RED", "CRITICA", "BOGOTA");
 
-        assertThat(ticket.get("technician").get("code").asText()).isEqualTo("TEC-007");
-        assertThat(assignments(ticket.get("id").asLong(), adminToken()).get(0).get("source").asText()).isEqualTo("RULES");
+        assertThat(ticket.get("technician").get("code").asString()).isEqualTo("TEC-007");
+        assertThat(assignments(ticket.get("id").asLong(), adminToken()).get(0).get("source").asString()).isEqualTo("RULES");
     }
 
     @Test
@@ -77,14 +77,14 @@ class TicketAssignmentIT extends AbstractIntegrationTest {
             tickets.add(createTicket(user, "HARDWARE", "MEDIA", "BOGOTA"));
         }
 
-        long assigned = tickets.stream().filter(t -> t.get("status").asText().equals("ASIGNADO")).count();
+        long assigned = tickets.stream().filter(t -> t.get("status").asString().equals("ASIGNADO")).count();
         JsonNode pending = tickets.get(6);
 
         assertThat(assigned).isEqualTo(6);
-        assertThat(pending.get("status").asText()).isEqualTo("ABIERTO");
+        assertThat(pending.get("status").asString()).isEqualTo("ABIERTO");
         assertThat(pending.get("technician").isNull()).isTrue();
         JsonNode history = json(getJson("/tickets/" + pending.get("id").asLong() + "/history", user));
-        assertThat(history.findValuesAsText("action")).containsExactly("CREATED", "ASSIGNMENT_PENDING");
+        assertThat(history.findValuesAsString("action")).containsExactly("CREATED", "ASSIGNMENT_PENDING");
 
         // the admin frees capacity and assigns the pending ticket manually
         jdbc.update("update technicians set max_active_tickets = 2 where code = 'TEC-001'");
@@ -92,10 +92,10 @@ class TicketAssignmentIT extends AbstractIntegrationTest {
                 Map.of("technicianId", technicianId("TEC-001"), "observations", "Manual assignment by admin"));
 
         assertThat(manual.getResponse().getStatus()).isEqualTo(200);
-        assertThat(json(manual).get("status").asText()).isEqualTo("ASIGNADO");
-        assertThat(json(manual).get("technician").get("code").asText()).isEqualTo("TEC-001");
+        assertThat(json(manual).get("status").asString()).isEqualTo("ASIGNADO");
+        assertThat(json(manual).get("technician").get("code").asString()).isEqualTo("TEC-001");
         JsonNode after = json(getJson("/tickets/" + pending.get("id").asLong() + "/history", user));
-        assertThat(after.findValuesAsText("action")).containsExactly("CREATED", "ASSIGNMENT_PENDING", "ASSIGNED");
+        assertThat(after.findValuesAsString("action")).containsExactly("CREATED", "ASSIGNMENT_PENDING", "ASSIGNED");
     }
 
     @Test
@@ -109,7 +109,7 @@ class TicketAssignmentIT extends AbstractIntegrationTest {
 
         JsonNode critical = createTicket(user, "HARDWARE", "CRITICA", "BOGOTA");
 
-        assertThat(critical.get("status").asText()).isEqualTo("ASIGNADO");
+        assertThat(critical.get("status").asString()).isEqualTo("ASIGNADO");
     }
 
     @Test
@@ -123,15 +123,15 @@ class TicketAssignmentIT extends AbstractIntegrationTest {
                 Map.of("technicianId", technicianId("TEC-009"), "observations", "Moved to the specialist in CALI"));
 
         assertThat(result.getResponse().getStatus()).isEqualTo(200);
-        assertThat(json(result).get("technician").get("code").asText()).isEqualTo("TEC-009");
+        assertThat(json(result).get("technician").get("code").asString()).isEqualTo("TEC-009");
         JsonNode all = assignments(id, admin);
         assertThat(all).hasSize(2);
         assertThat(all.get(0).get("active").asBoolean()).isFalse();
         assertThat(all.get(1).get("active").asBoolean()).isTrue();
-        assertThat(all.get(1).get("source").asText()).isEqualTo("MANUAL");
+        assertThat(all.get(1).get("source").asString()).isEqualTo("MANUAL");
         JsonNode history = json(getJson("/tickets/" + id + "/history", admin));
-        assertThat(history.findValuesAsText("action")).containsExactly("CREATED", "ASSIGNED", "REASSIGNED");
-        assertThat(history.get(2).get("observations").asText()).contains("TEC-009", "Moved to the specialist in CALI");
+        assertThat(history.findValuesAsString("action")).containsExactly("CREATED", "ASSIGNED", "REASSIGNED");
+        assertThat(history.get(2).get("observations").asString()).contains("TEC-009", "Moved to the specialist in CALI");
         // the previous technician no longer sees it, the new one does
         assertThat(json(getJson("/tickets", technicianToken("TEC-007"))).get("totalElements").asInt()).isZero();
         assertThat(json(getJson("/tickets", technicianToken("TEC-009"))).get("totalElements").asInt()).isEqualTo(1);
@@ -146,7 +146,7 @@ class TicketAssignmentIT extends AbstractIntegrationTest {
         MvcResult result = putJson("/tickets/" + id + "/assignment", adminToken(),
                 Map.of("technicianId", technicianId("TEC-009"), "observations", "Technician is on leave"));
 
-        assertThat(json(result).get("status").asText()).isEqualTo("ASIGNADO");
+        assertThat(json(result).get("status").asString()).isEqualTo("ASIGNADO");
     }
 
     @Test
@@ -171,15 +171,15 @@ class TicketAssignmentIT extends AbstractIntegrationTest {
                 Map.of("technicianId", 987654, "observations", "Does not exist"));
 
         assertThat(incompatible.getResponse().getStatus()).isEqualTo(422);
-        assertThat(json(incompatible).get("type").asText()).endsWith("technician-incompatible");
+        assertThat(json(incompatible).get("type").asString()).endsWith("technician-incompatible");
         assertThat(inactive.getResponse().getStatus()).isEqualTo(422);
-        assertThat(json(inactive).get("type").asText()).endsWith("technician-inactive");
+        assertThat(json(inactive).get("type").asString()).endsWith("technician-inactive");
         assertThat(full.getResponse().getStatus()).isEqualTo(422);
-        assertThat(json(full).get("type").asText()).endsWith("technician-at-capacity");
+        assertThat(json(full).get("type").asString()).endsWith("technician-at-capacity");
         assertThat(same.getResponse().getStatus()).isEqualTo(422);
-        assertThat(json(same).get("type").asText()).endsWith("already-assigned");
+        assertThat(json(same).get("type").asString()).endsWith("already-assigned");
         assertThat(unknown.getResponse().getStatus()).isEqualTo(404);
-        assertThat(json(getJson("/tickets/" + id, admin)).get("technician").get("code").asText()).isEqualTo("TEC-007");
+        assertThat(json(getJson("/tickets/" + id, admin)).get("technician").get("code").asString()).isEqualTo("TEC-007");
     }
 
     @Test
@@ -193,7 +193,7 @@ class TicketAssignmentIT extends AbstractIntegrationTest {
                 Map.of("technicianId", technicianId("TEC-009"), "observations", "Too late to assign"));
 
         assertThat(result.getResponse().getStatus()).isEqualTo(422);
-        assertThat(json(result).get("type").asText()).endsWith("ticket-not-assignable");
+        assertThat(json(result).get("type").asString()).endsWith("ticket-not-assignable");
     }
 
     @Test
@@ -216,7 +216,7 @@ class TicketAssignmentIT extends AbstractIntegrationTest {
         }
         pool.shutdown();
 
-        long assigned = results.stream().filter(t -> t.get("status").asText().equals("ASIGNADO")).count();
+        long assigned = results.stream().filter(t -> t.get("status").asString().equals("ASIGNADO")).count();
         assertThat(assigned).as("tickets assigned to a technician with one free slot").isEqualTo(1);
         assertThat(jdbc.queryForObject("""
                 select count(*) from tickets t join technicians k on k.id = t.assigned_technician_id
