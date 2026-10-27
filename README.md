@@ -408,7 +408,7 @@ Secrets come from the environment (`.env`, never committed). Main variables:
 ├── frontend/                        Angular 22 + Tailwind CSS 4 web app + Dockerfile (nginx)
 ├── docker-compose.yml               db, both services, prometheus, grafana
 ├── monitoring/                      prometheus.yml, Grafana provisioning and dashboard
-├── scripts/                         setup-env.sh (generates .env with random secrets)
+├── scripts/                         setup-env.sh / setup-env.ps1 (generate .env with random secrets: Linux-macOS / Windows)
 └── docs/                            RUNBOOK, EVIDENCE, postman, images
 ```
 
