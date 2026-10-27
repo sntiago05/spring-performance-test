@@ -1,0 +1,10 @@
+# Keep LF where tools inside Linux containers or WSL read the files, even if Windows has core.autocrlf=true.
+* text=auto
+*.sh text eol=lf
+mvnw text eol=lf
+*.yml text eol=lf
+*.conf text eol=lf
+Dockerfile text eol=lf
+*.cmd text eol=crlf
+*.png binary
+*.ico binary

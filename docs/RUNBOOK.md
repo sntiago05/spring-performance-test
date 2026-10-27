@@ -6,16 +6,16 @@ How to start, test and troubleshoot the whole system. All commands run from the 
 
 | Tool | Needed for | Check |
 |---|---|---|
-| Docker + Compose v2 | running the stack, Testcontainers | `docker compose version` |
+| Docker + Compose v2 (Docker Desktop on Windows/macOS) | running the stack, Testcontainers | `docker compose version` |
 | JDK 21+ | building/testing outside Docker | `java -version` |
-| `curl`, `jq`, `openssl` | smoke test and scripts | `jq --version` |
+| `openssl` (Linux/macOS only) | `scripts/setup-env.sh`; on Windows use `scripts/setup-env.ps1` (PowerShell, nothing to install) | `openssl version` |
 
 Free ports: 4200 (frontend), 8080, 8081, 9090, 3000 and 5433 (change them in `.env`).
 
 ## 2. Start everything
 
 ```bash
-./scripts/setup-env.sh                 # once: creates .env with random secrets
+./scripts/setup-env.sh                 # once: creates .env with random secrets (Windows: powershell -ExecutionPolicy Bypass -File .\scripts\setup-env.ps1)
 docker compose up -d --build           # builds and starts frontend, backend services, DB and monitoring
 docker compose ps                      # wait until db, both services and frontend show (healthy)
 ```
@@ -134,6 +134,9 @@ curl -s 'localhost:9090/api/v1/query?query=helpflow_tickets_overdue' | jq .
 | `docker compose build` fails downloading Maven artifacts | No network inside the builder | Check proxy/DNS, retry; BuildKit caches downloaded artifacts |
 | Web app shows a blank page or `502` | Backend not healthy yet, or the `/api` proxy cannot reach it | `docker compose ps`; the frontend container reaches `support-ticket-service:8080` by name |
 | Material components ignore Tailwind sizes | Material CSS is unlayered and beats `@layer utilities` | Use the important modifier on Material hosts (e.g. `w-64!`), see `frontend/src/tailwind.css` |
+| Windows: `setup-env.ps1 cannot be loaded because running scripts is disabled` | PowerShell execution policy | Run it as `powershell -ExecutionPolicy Bypass -File .\scripts\setup-env.ps1` |
+| Windows: `exec ./mvnw: no such file` or `\r` errors in containers | Files checked out with CRLF | The repository ships a `.gitattributes` that keeps LF for scripts and Dockerfiles; re-clone or run `git add --renormalize .` |
+| Windows: Docker cannot bind ports / is slow | Docker Desktop without WSL 2 | Enable the WSL 2 backend in Docker Desktop and keep the project inside the WSL file system for speed |
 | Spanish text shows `?` characters | Terminal not UTF-8 | `export LANG=C.UTF-8` |
 | 409 `concurrent-modification` | Two requests changed the same ticket at once | Reload the ticket and retry |
 

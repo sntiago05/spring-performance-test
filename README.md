@@ -41,6 +41,15 @@ Requirements: Docker with Compose v2 (to run), JDK 21+ and Docker (to build and 
 docker compose up -d --build        # PostgreSQL, backend services, frontend, Prometheus, Grafana
 ```
 
+On **Windows** (Docker Desktop, PowerShell) the same two steps are:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-env.ps1   # use -Force to regenerate
+docker compose up -d --build
+```
+
+Maven on Windows: `.\mvnw.cmd clean verify` instead of `./mvnw clean verify`.
+
 | What | URL |
 |---|---|
 | HelpFlow Web Frontend | http://localhost:4200 |
