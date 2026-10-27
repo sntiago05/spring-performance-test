@@ -7,7 +7,7 @@ Everything below was captured from the Docker Compose stack (`docker compose up 
 
 ```
 ./mvnw clean verify
-  technician-dispatch-service   unit tests:        29, failures 0
+  technician-dispatch-service   unit tests:        40, failures 0
   support-ticket-service         unit tests:       104, failures 0
   support-ticket-service         integration (Testcontainers PostgreSQL 16): 62, failures 0
 ./scripts/smoke-test.sh          Result: 31 passed, 0 failed

@@ -1,0 +1,40 @@
+@if (problem) {
+  <div class="mb-5 p-4 rounded-lg border border-red-200 border-l-4 border-l-red-600 bg-red-50 text-red-900 dark:border-red-900 dark:border-l-red-500 dark:bg-red-950/40 dark:text-red-200" role="alert">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <mat-icon class="text-xl w-5 h-5 flex items-center justify-center text-red-600 dark:text-red-400">error_outline</mat-icon>
+        <strong class="text-base font-semibold">{{ problem.title }}</strong>
+      </div>
+      @if (dismissible) {
+        <button mat-icon-button (click)="onClose()" [attr.aria-label]="i18n.t().app.close">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+
+    @if (problem.detail) {
+      <p class="my-2 ml-7 text-sm leading-relaxed text-red-800 dark:text-red-300">{{ problem.detail }}</p>
+    }
+
+    @if (problem.errors && problem.errors.length > 0) {
+      <ul class="my-2 ml-7 pl-5 list-disc text-xs text-red-800 dark:text-red-300 space-y-1">
+        @for (err of problem.errors; track err.field) {
+          <li>
+            <strong>{{ err.field }}:</strong> {{ err.message }}
+          </li>
+        }
+      </ul>
+    }
+
+    @if (problem.traceId) {
+      <div class="flex flex-wrap items-center gap-2 mt-3 ml-7 pt-2 border-t border-dashed border-red-200 dark:border-red-800 text-xs">
+        <span class="font-medium">{{ i18n.t().problem.traceId }}:</span>
+        <code class="px-1.5 py-0.5 rounded font-mono text-xs bg-red-100/70 text-red-950 dark:bg-red-900/60 dark:text-red-200">{{ problem.traceId }}</code>
+        <button mat-button class="inline-flex items-center gap-1 px-2 py-1 h-7 text-xs rounded font-medium text-red-700 hover:bg-red-100 dark:text-red-300 dark:hover:bg-red-900/40 transition-colors" (click)="copyTraceId()" [title]="i18n.t().problem.copyTraceId">
+          <mat-icon class="text-sm w-4 h-4 flex items-center justify-center mr-1">content_copy</mat-icon>
+          <span>{{ i18n.t().problem.copyTraceId }}</span>
+        </button>
+      </div>
+    }
+  </div>
+}

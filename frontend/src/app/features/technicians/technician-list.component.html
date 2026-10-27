@@ -1,0 +1,157 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-5">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-baseline gap-3">
+      <h1 class="m-0 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ i18n.t().technicians.title }}</h1>
+      <span class="text-sm text-slate-500 dark:text-slate-400">{{ totalElements() }} technicians registered</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button mat-flat-button color="primary" (click)="openCreateDialog()">
+        <mat-icon>add</mat-icon>
+        <span>New Technician</span>
+      </button>
+      <button mat-icon-button (click)="fetchTechnicians()" [title]="'Refresh'">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  @if (problem()) {
+    <app-problem-alert [problem]="problem()" (dismissed)="problem.set(null)"></app-problem-alert>
+  }
+
+  <!-- Filters -->
+  <mat-card class="p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+    <form [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+      <div class="flex flex-wrap items-center gap-3">
+        <mat-form-field appearance="outline" class="min-w-[160px]! flex-1">
+          <mat-label>{{ i18n.t().app.status }}</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="">{{ i18n.t().app.all }}</mat-option>
+            @for (st of statusesList; track st) {
+              <mat-option [value]="st">{{ i18n.t().enums.userStatuses[st] }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="min-w-[160px]! flex-1">
+          <mat-label>Specialty</mat-label>
+          <mat-select formControlName="specialty">
+            <mat-option value="">{{ i18n.t().app.all }}</mat-option>
+            @for (sp of specialtiesList; track sp) {
+              <mat-option [value]="sp">{{ i18n.t().enums.categories[sp] }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <button mat-flat-button color="primary" type="submit">
+            <mat-icon>filter_list</mat-icon>
+            <span>{{ i18n.t().app.filter }}</span>
+          </button>
+          <button mat-button type="button" (click)="resetFilters()">
+            <span>{{ i18n.t().app.reset }}</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </mat-card>
+
+  <!-- Table -->
+  <mat-card class="p-0 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
+    @if (loading()) {
+      <app-loading></app-loading>
+    } @else if (technicians().length === 0) {
+      <app-empty-state
+        icon="engineering"
+        title="No technicians found"
+        [actionText]="i18n.t().app.reset"
+        (actionClicked)="resetFilters()">
+      </app-empty-state>
+    } @else {
+      <div class="w-full overflow-x-auto">
+        <table
+          mat-table
+          [dataSource]="technicians()"
+          matSort
+          [matSortActive]="sortField()"
+          [matSortDirection]="sortDirection()"
+          (matSortChange)="onSortChange($event)"
+          class="w-full bg-transparent"
+          aria-label="Technicians Table">
+
+          <!-- Code -->
+          <ng-container matColumnDef="code">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Code</th>
+            <td mat-cell *matCellDef="let t" class="w-[100px] font-bold text-sky-700 dark:text-sky-400 font-mono text-xs">
+              {{ t.code }}
+            </td>
+          </ng-container>
+
+          <!-- Full Name -->
+          <ng-container matColumnDef="fullName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Full Name</th>
+            <td mat-cell *matCellDef="let t" class="font-medium text-slate-900 dark:text-slate-100 text-sm">{{ t.fullName }}</td>
+          </ng-container>
+
+          <!-- Specialty -->
+          <ng-container matColumnDef="specialty">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Specialty</th>
+            <td mat-cell *matCellDef="let t">
+              <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">{{ t.specialty }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Site -->
+          <ng-container matColumnDef="site">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Site</th>
+            <td mat-cell *matCellDef="let t" class="text-sm text-slate-600 dark:text-slate-300">{{ t.site }}</td>
+          </ng-container>
+
+          <!-- Max Active Capacity -->
+          <ng-container matColumnDef="maxActiveTickets">
+            <th mat-header-cell *matHeaderCellDef>Capacity Limit</th>
+            <td mat-cell *matCellDef="let t">
+              <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">{{ t.maxActiveTickets }} tickets</span>
+            </td>
+          </ng-container>
+
+          <!-- Status -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let t">
+              <span
+                class="inline-flex px-2 py-0.5 rounded-full text-xs font-bold uppercase"
+                [ngClass]="t.status === 'ACTIVO'
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                  : 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300'">
+                {{ i18n.t().enums.userStatuses[t.status] ?? t.status }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Actions -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="w-20">Actions</th>
+            <td mat-cell *matCellDef="let t">
+              <button mat-icon-button (click)="openEditDialog(t)" [title]="'Edit Profile'">
+                <mat-icon>edit</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="totalElements()"
+        [pageSize]="pageSize()"
+        [pageIndex]="pageIndex()"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="onPageChange($event)"
+        aria-label="Select page of technicians">
+      </mat-paginator>
+    }
+  </mat-card>
+</div>

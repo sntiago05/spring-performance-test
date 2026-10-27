@@ -1,0 +1,141 @@
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div class="flex flex-col">
+      <h1 class="m-0 mb-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ i18n.t().tickets.createTitle }}</h1>
+      <p class="m-0 text-sm text-slate-500 dark:text-slate-400">Register an IT incident or service request with automatic SLA calculation</p>
+    </div>
+    <a mat-button routerLink="/tickets">
+      <mat-icon>arrow_back</mat-icon>
+      <span>{{ i18n.t().app.back }}</span>
+    </a>
+  </div>
+
+  @if (problem()) {
+    <app-problem-alert [problem]="problem()" (dismissed)="problem.set(null)"></app-problem-alert>
+  }
+
+  <mat-card class="p-6 sm:p-8 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+    <form [formGroup]="ticketForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-4" novalidate>
+      <!-- Title -->
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>{{ i18n.t().tickets.titleField }}</mat-label>
+        <input
+          matInput
+          formControlName="title"
+          placeholder="e.g. Office Wi-Fi drops every few minutes"
+          maxlength="150">
+        <mat-hint align="end">{{ ticketForm.get('title')?.value?.length || 0 }}/150</mat-hint>
+        @if (ticketForm.get('title')?.hasError('required')) {
+          <mat-error>{{ i18n.t().validation.required }}</mat-error>
+        }
+        @if (ticketForm.get('title')?.hasError('minlength')) {
+          <mat-error>{{ i18n.t().validation.minLength }} (min. 5)</mat-error>
+        }
+        @if (ticketForm.get('title')?.hasError('serverError')) {
+          <mat-error>{{ ticketForm.get('title')?.getError('serverError') }}</mat-error>
+        }
+      </mat-form-field>
+
+      <!-- Category & Priority Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>{{ i18n.t().tickets.categoryField }}</mat-label>
+          <mat-select formControlName="category">
+            @for (cat of categories; track cat) {
+              <mat-option [value]="cat">{{ i18n.t().enums.categories[cat] }} ({{ cat }})</mat-option>
+            }
+          </mat-select>
+          @if (ticketForm.get('category')?.hasError('required')) {
+            <mat-error>{{ i18n.t().validation.required }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>{{ i18n.t().tickets.priorityField }}</mat-label>
+          <mat-select formControlName="priority">
+            @for (pr of priorities; track pr) {
+              <mat-option [value]="pr">{{ i18n.t().enums.priorities[pr] }} ({{ pr }})</mat-option>
+            }
+          </mat-select>
+          @if (ticketForm.get('priority')?.hasError('required')) {
+            <mat-error>{{ i18n.t().validation.required }}</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <!-- Site & Affected Asset Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>{{ i18n.t().tickets.siteField }}</mat-label>
+          <input
+            matInput
+            formControlName="site"
+            placeholder="e.g. BOGOTA"
+            maxlength="60">
+          @if (ticketForm.get('site')?.hasError('required')) {
+            <mat-error>{{ i18n.t().validation.required }}</mat-error>
+          }
+          @if (ticketForm.get('site')?.hasError('serverError')) {
+            <mat-error>{{ ticketForm.get('site')?.getError('serverError') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>{{ i18n.t().tickets.assetField }}</mat-label>
+          <input
+            matInput
+            formControlName="affectedAsset"
+            placeholder="e.g. AP-3F-02, LAPTOP-8812, ERP-FINANCE"
+            maxlength="120">
+          @if (ticketForm.get('affectedAsset')?.hasError('required')) {
+            <mat-error>{{ i18n.t().validation.required }}</mat-error>
+          }
+          @if (ticketForm.get('affectedAsset')?.hasError('serverError')) {
+            <mat-error>{{ ticketForm.get('affectedAsset')?.getError('serverError') }}</mat-error>
+          }
+        </mat-form-field>
+      </div>
+
+      <!-- Description -->
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>{{ i18n.t().tickets.descriptionField }}</mat-label>
+        <textarea
+          matInput
+          rows="6"
+          formControlName="description"
+          placeholder="Describe what happened, error messages, and steps to reproduce..."
+          maxlength="4000">
+        </textarea>
+        <mat-hint align="end">{{ ticketForm.get('description')?.value?.length || 0 }}/4000</mat-hint>
+        @if (ticketForm.get('description')?.hasError('required')) {
+          <mat-error>{{ i18n.t().validation.required }}</mat-error>
+        }
+        @if (ticketForm.get('description')?.hasError('minlength')) {
+          <mat-error>{{ i18n.t().validation.minLength }} (min. 10)</mat-error>
+        }
+        @if (ticketForm.get('description')?.hasError('serverError')) {
+          <mat-error>{{ ticketForm.get('description')?.getError('serverError') }}</mat-error>
+        }
+      </mat-form-field>
+
+      <div class="flex items-center justify-end gap-3 mt-2">
+        <a mat-button routerLink="/tickets">{{ i18n.t().app.cancel }}</a>
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          class="h-11 px-6 font-semibold rounded-lg"
+          [disabled]="isSubmitting()">
+          @if (isSubmitting()) {
+            <mat-spinner diameter="20" class="inline-block mx-auto"></mat-spinner>
+          } @else {
+            <ng-container>
+              <mat-icon>send</mat-icon>
+              <span>Register & Assign Ticket</span>
+            </ng-container>
+          }
+        </button>
+      </div>
+    </form>
+  </mat-card>
+</div>

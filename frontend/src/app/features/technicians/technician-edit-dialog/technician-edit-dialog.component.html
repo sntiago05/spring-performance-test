@@ -1,0 +1,68 @@
+<h2 mat-dialog-title class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ i18n.t().technicians.editTitle }}: {{ data.technician.code }}</h2>
+
+<mat-dialog-content class="min-w-[320px] max-w-[500px] pt-2">
+  @if (problem()) {
+    <app-problem-alert [problem]="problem()" (dismissed)="problem.set(null)"></app-problem-alert>
+  }
+
+  <form [formGroup]="form" class="flex flex-col gap-3 mt-2" (ngSubmit)="onSubmit()" novalidate>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Full Name</mat-label>
+      <input matInput formControlName="fullName">
+      @if (form.get('fullName')?.hasError('required')) {
+        <mat-error>{{ i18n.t().validation.required }}</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Specialty</mat-label>
+        <mat-select formControlName="specialty">
+          @for (cat of categories; track cat) {
+            <mat-option [value]="cat">{{ i18n.t().enums.categories[cat] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Status</mat-label>
+        <mat-select formControlName="status">
+          @for (st of statuses; track st) {
+            <mat-option [value]="st">{{ i18n.t().enums.userStatuses[st] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Site</mat-label>
+        <input matInput formControlName="site">
+        @if (form.get('site')?.hasError('required')) {
+          <mat-error>{{ i18n.t().validation.required }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Max Active Tickets (1-20)</mat-label>
+        <input matInput type="number" formControlName="maxActiveTickets" min="1" max="20">
+        @if (form.get('maxActiveTickets')?.hasError('min') || form.get('maxActiveTickets')?.hasError('max')) {
+          <mat-error>Must be 1 to 20</mat-error>
+        }
+      </mat-form-field>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="pt-4 gap-2">
+  <button mat-button [mat-dialog-close]="null" [disabled]="isSubmitting()">
+    {{ i18n.t().app.cancel }}
+  </button>
+  <button mat-flat-button color="primary" (click)="onSubmit()" [disabled]="isSubmitting()">
+    @if (isSubmitting()) {
+      <mat-spinner diameter="20"></mat-spinner>
+    } @else {
+      <span>{{ i18n.t().app.save }}</span>
+    }
+  </button>
+</mat-dialog-actions>

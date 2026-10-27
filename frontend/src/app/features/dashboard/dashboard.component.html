@@ -1,0 +1,146 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div class="flex flex-col">
+      <h1 class="m-0 mb-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ i18n.t().dashboard.title }}</h1>
+      <p class="m-0 text-sm text-slate-500 dark:text-slate-400">{{ i18n.t().dashboard.subtitle }}</p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      @if (authService.isUser() || authService.isAdmin()) {
+        <a mat-flat-button color="primary" routerLink="/tickets/new">
+          <mat-icon>add</mat-icon>
+          <span>{{ i18n.t().dashboard.createTicketCta }}</span>
+        </a>
+      }
+
+      @if (authService.isAdmin()) {
+        <button mat-stroked-button color="accent" (click)="runSlaReview()">
+          <mat-icon>alarm</mat-icon>
+          <span>{{ i18n.t().dashboard.runReviewCta }}</span>
+        </button>
+      }
+
+      <button mat-icon-button (click)="loadDashboardData()" [title]="'Refresh'">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  @if (problem()) {
+    <app-problem-alert [problem]="problem()" (dismissed)="problem.set(null)"></app-problem-alert>
+  }
+
+  @if (loading()) {
+    <app-loading></app-loading>
+  } @else {
+    <!-- Metrics Overview Grid -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+      <div
+        class="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+        (click)="router.navigate(['/tickets'])">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">{{ i18n.t().dashboard.activeTickets }}</span>
+          <mat-icon class="text-2xl w-6 h-6 flex items-center justify-center text-sky-700 dark:text-sky-400">pending_actions</mat-icon>
+        </div>
+        <div class="my-2 text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100">{{ activeTicketsCount() }}</div>
+        <div class="text-xs text-slate-500 dark:text-slate-400">{{ i18n.t().dashboard.totalTickets }}: {{ totalVisibleCount() }}</div>
+      </div>
+
+      <div
+        class="p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+        (click)="filterByOverdue()"
+        [class.border-l-4]="overdueCount() > 0"
+        [class.border-l-red-600]="overdueCount() > 0"
+        [class.dark:border-l-red-500]="overdueCount() > 0">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-slate-600 dark:text-slate-300">{{ i18n.t().dashboard.overdueTickets }}</span>
+          <mat-icon class="text-2xl w-6 h-6 flex items-center justify-center text-red-600 dark:text-red-400">warning</mat-icon>
+        </div>
+        <div class="my-2 text-3xl sm:text-4xl font-bold text-red-600 dark:text-red-400">{{ overdueCount() }}</div>
+        <div class="text-xs text-slate-500 dark:text-slate-400">
+          @if (overdueCount() > 0) {
+            <span class="text-red-600 dark:text-red-400 font-semibold">{{ i18n.t().tickets.overdueWarning }}</span>
+          } @else {
+            <span class="text-emerald-600 dark:text-emerald-400 font-medium">All SLAs on schedule</span>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Status Breakdown Grid -->
+    <h2 class="m-0 text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ i18n.t().app.status }} Breakdown</h2>
+    <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      @for (st of statusesList; track st) {
+        <div
+          class="flex flex-col items-center gap-2 p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-sky-500 dark:hover:border-sky-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 shadow-xs transition-all cursor-pointer"
+          (click)="filterByStatus(st)">
+          <div class="flex items-center justify-center">
+            <app-status-badge [status]="st"></app-status-badge>
+          </div>
+          <span class="text-2xl font-bold text-slate-900 dark:text-slate-100">{{ statusCounts()[st] }}</span>
+        </div>
+      }
+    </section>
+
+    <!-- Urgent Tickets Section -->
+    <section class="flex flex-col gap-4 mt-2">
+      <div class="flex items-center justify-between">
+        <h2 class="m-0 text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ i18n.t().dashboard.urgentTicketsTitle }}</h2>
+        <a mat-button color="primary" routerLink="/tickets">
+          <span>{{ i18n.t().dashboard.viewAllTickets }}</span>
+          <mat-icon>arrow_forward</mat-icon>
+        </a>
+      </div>
+
+      @if (urgentTickets().length === 0) {
+        <app-empty-state
+          icon="task_alt"
+          [title]="i18n.t().dashboard.noUrgentTickets"
+          message="">
+        </app-empty-state>
+      } @else {
+        <div class="flex flex-col gap-3">
+          @for (ticket of urgentTickets(); track ticket.id) {
+            <mat-card
+              class="p-4 sm:p-5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-sky-500 dark:hover:border-sky-400 hover:shadow-xs transition-all cursor-pointer"
+              (click)="openTicket(ticket)">
+              <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-col gap-1.5 flex-1 min-w-[260px]">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-bold text-slate-500 dark:text-slate-400">#{{ ticket.id }}</span>
+                    <app-priority-badge [priority]="ticket.priority"></app-priority-badge>
+                    <app-status-badge [status]="ticket.status"></app-status-badge>
+                    <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">{{ ticket.category }}</span>
+                  </div>
+                  <h3 class="m-0 text-base font-semibold text-slate-900 dark:text-slate-100">{{ ticket.title }}</h3>
+                  <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                    <span><strong>{{ i18n.t().tickets.siteField }}:</strong> {{ ticket.site }}</span>
+                    <span>•</span>
+                    <span><strong>{{ i18n.t().tickets.requesterField }}:</strong> {{ ticket.requester.fullName }}</span>
+                    @if (ticket.technician) {
+                      <span>•</span>
+                      <span><strong>{{ i18n.t().tickets.technicianField }}:</strong> {{ ticket.technician.fullName }}</span>
+                    }
+                  </div>
+                </div>
+
+                <div class="flex flex-col items-end gap-1 shrink-0">
+                  @let countdown = (ticket.slaDueAt | slaCountdown:ticket.status === 'RESUELTO' || ticket.status === 'CERRADO');
+                  <div
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold"
+                    [ngClass]="countdown.isOverdue
+                      ? 'bg-red-100 text-red-800 border border-red-300 dark:bg-red-950 dark:text-red-300 dark:border-red-800 animate-pulse'
+                      : 'bg-sky-100/80 text-sky-800 dark:bg-sky-950 dark:text-sky-300'">
+                    <mat-icon class="text-sm w-4 h-4 flex items-center justify-center">{{ countdown.isOverdue ? 'alarm_off' : 'hourglass_top' }}</mat-icon>
+                    <span>{{ countdown.text }}</span>
+                  </div>
+                  <span class="text-xs text-slate-500 dark:text-slate-400">{{ ticket.slaDueAt | localizedDate:'short' }}</span>
+                </div>
+              </div>
+            </mat-card>
+          }
+        </div>
+      }
+    </section>
+  }
+</div>

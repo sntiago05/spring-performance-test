@@ -1,0 +1,108 @@
+<h2 mat-dialog-title class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ i18n.t().technicians.createTitle }}</h2>
+
+<mat-dialog-content class="min-w-[320px] max-w-[580px] pt-2">
+  @if (problem()) {
+    <app-problem-alert [problem]="problem()" (dismissed)="problem.set(null)"></app-problem-alert>
+  }
+
+  <form [formGroup]="form" class="flex flex-col gap-3 mt-2" (ngSubmit)="onSubmit()" novalidate>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Document ID</mat-label>
+        <input matInput formControlName="document" placeholder="9988776655">
+        @if (form.get('document')?.hasError('required')) {
+          <mat-error>{{ i18n.t().validation.required }}</mat-error>
+        }
+        @if (form.get('document')?.hasError('pattern')) {
+          <mat-error>{{ i18n.t().validation.documentFormat }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Full Name</mat-label>
+        <input matInput formControlName="fullName" placeholder="Carlos Ruiz">
+        @if (form.get('fullName')?.hasError('required')) {
+          <mat-error>{{ i18n.t().validation.required }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Corporate Email</mat-label>
+        <input matInput type="email" formControlName="email" placeholder="carlos.ruiz@helpflow.example">
+        @if (form.get('email')?.hasError('required')) {
+          <mat-error>{{ i18n.t().validation.required }}</mat-error>
+        }
+        @if (form.get('email')?.hasError('corporateEmail')) {
+          <mat-error>{{ i18n.t().validation.corporateEmail }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Initial Password</mat-label>
+        <input matInput [type]="hidePassword() ? 'password' : 'text'" formControlName="password">
+        <button
+          type="button"
+          mat-icon-button
+          matSuffix
+          (click)="hidePassword.set(!hidePassword())">
+          <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        @if (form.get('password')?.hasError('required')) {
+          <mat-error>{{ i18n.t().validation.required }}</mat-error>
+        }
+        @if (form.get('password')?.hasError('minlength')) {
+          <mat-error>{{ i18n.t().validation.minLength }} (min. 8)</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Site</mat-label>
+        <input matInput formControlName="site" placeholder="BOGOTA">
+        @if (form.get('site')?.hasError('required')) {
+          <mat-error>{{ i18n.t().validation.required }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Area</mat-label>
+        <input matInput formControlName="area" placeholder="IT Support">
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Specialty</mat-label>
+        <mat-select formControlName="specialty">
+          @for (cat of categories; track cat) {
+            <mat-option [value]="cat">{{ i18n.t().enums.categories[cat] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Max Active Tickets (1-20)</mat-label>
+        <input matInput type="number" formControlName="maxActiveTickets" min="1" max="20">
+        @if (form.get('maxActiveTickets')?.hasError('min') || form.get('maxActiveTickets')?.hasError('max')) {
+          <mat-error>Must be 1 to 20</mat-error>
+        }
+      </mat-form-field>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="pt-4 gap-2">
+  <button mat-button [mat-dialog-close]="null" [disabled]="isSubmitting()">
+    {{ i18n.t().app.cancel }}
+  </button>
+  <button mat-flat-button color="primary" (click)="onSubmit()" [disabled]="isSubmitting()">
+    @if (isSubmitting()) {
+      <mat-spinner diameter="20"></mat-spinner>
+    } @else {
+      <span>Create Technician</span>
+    }
+  </button>
+</mat-dialog-actions>

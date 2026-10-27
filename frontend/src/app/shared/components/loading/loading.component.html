@@ -1,0 +1,8 @@
+<div class="flex flex-col items-center justify-center p-12 gap-4" role="status" [attr.aria-label]="defaultMessage">
+  <mat-progress-spinner
+    mode="indeterminate"
+    [diameter]="diameter"
+    color="primary">
+  </mat-progress-spinner>
+  <span class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ defaultMessage }}</span>
+</div>

@@ -1,0 +1,46 @@
+<h2 mat-dialog-title class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ i18n.t().sla.editPolicy }}: {{ data.policy.priority }}</h2>
+
+<mat-dialog-content class="min-w-[320px] max-w-[440px] pt-2">
+  @if (problem()) {
+    <app-problem-alert [problem]="problem()" (dismissed)="problem.set(null)"></app-problem-alert>
+  }
+
+  <form [formGroup]="form" class="flex flex-col gap-4 mt-2" (ngSubmit)="onSubmit()" novalidate>
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>{{ i18n.t().sla.resolutionHoursCol }} (hours: 1 - 720)</mat-label>
+      <input matInput type="number" formControlName="resolutionHours" min="1" max="720">
+      <mat-hint>Calendar hours until SLA breach deadline</mat-hint>
+      @if (form.get('resolutionHours')?.hasError('required')) {
+        <mat-error>{{ i18n.t().validation.required }}</mat-error>
+      }
+      @if (form.get('resolutionHours')?.hasError('min') || form.get('resolutionHours')?.hasError('max')) {
+        <mat-error>Must be between 1 and 720 hours (up to 30 days)</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>{{ i18n.t().sla.thresholdCol }} (%: 1 - 99)</mat-label>
+      <input matInput type="number" formControlName="escalationThresholdPercent" min="1" max="99">
+      <mat-hint>Share of resolution window when priority automatically rises</mat-hint>
+      @if (form.get('escalationThresholdPercent')?.hasError('required')) {
+        <mat-error>{{ i18n.t().validation.required }}</mat-error>
+      }
+      @if (form.get('escalationThresholdPercent')?.hasError('min') || form.get('escalationThresholdPercent')?.hasError('max')) {
+        <mat-error>Must be between 1% and 99%</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="pt-4 gap-2">
+  <button mat-button [mat-dialog-close]="null" [disabled]="isSubmitting()">
+    {{ i18n.t().app.cancel }}
+  </button>
+  <button mat-flat-button color="primary" (click)="onSubmit()" [disabled]="isSubmitting()">
+    @if (isSubmitting()) {
+      <mat-spinner diameter="20"></mat-spinner>
+    } @else {
+      <span>{{ i18n.t().app.save }}</span>
+    }
+  </button>
+</mat-dialog-actions>

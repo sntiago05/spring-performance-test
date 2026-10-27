@@ -1,0 +1,133 @@
+<mat-sidenav-container class="h-screen flex">
+  <!-- Sidenav Navigation -->
+  <mat-sidenav
+    #sidenav
+    [mode]="isMobile() ? 'over' : 'side'"
+    [opened]="!isMobile()"
+    class="w-64! flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
+    
+    <div class="p-5 border-b border-slate-200 dark:border-slate-800">
+      <div class="flex items-center gap-3">
+        <mat-icon class="text-[32px] w-8 h-8 flex items-center justify-center text-sky-700 dark:text-sky-400">confirmation_number</mat-icon>
+        <div class="flex flex-col">
+          <span class="text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">{{ i18n.t().app.title }}</span>
+          <span class="text-xs text-slate-500 dark:text-slate-400">{{ i18n.t().app.subtitle }}</span>
+        </div>
+      </div>
+    </div>
+
+    <mat-nav-list class="flex-1 p-2 space-y-1">
+      <a mat-list-item routerLink="/dashboard" routerLinkActive="bg-sky-100/70 text-sky-700 font-semibold dark:bg-sky-950/60 dark:text-sky-300 rounded-md" (click)="isMobile() && sidenav.close()">
+        <mat-icon matListItemIcon>dashboard</mat-icon>
+        <span matListItemTitle>{{ i18n.t().nav.dashboard }}</span>
+      </a>
+
+      <a mat-list-item routerLink="/tickets" routerLinkActive="bg-sky-100/70 text-sky-700 font-semibold dark:bg-sky-950/60 dark:text-sky-300 rounded-md" [routerLinkActiveOptions]="{ exact: true }" (click)="isMobile() && sidenav.close()">
+        <mat-icon matListItemIcon>receipt_long</mat-icon>
+        <span matListItemTitle>{{ i18n.t().nav.tickets }}</span>
+      </a>
+
+      @if (authService.isUser() || authService.isAdmin()) {
+        <a mat-list-item routerLink="/tickets/new" routerLinkActive="bg-sky-100/70 text-sky-700 font-semibold dark:bg-sky-950/60 dark:text-sky-300 rounded-md" (click)="isMobile() && sidenav.close()">
+          <mat-icon matListItemIcon>add_circle_outline</mat-icon>
+          <span matListItemTitle>{{ i18n.t().nav.newTicket }}</span>
+        </a>
+      }
+
+      <a mat-list-item routerLink="/sla-policies" routerLinkActive="bg-sky-100/70 text-sky-700 font-semibold dark:bg-sky-950/60 dark:text-sky-300 rounded-md" (click)="isMobile() && sidenav.close()">
+        <mat-icon matListItemIcon>schedule</mat-icon>
+        <span matListItemTitle>{{ i18n.t().nav.slaPolicies }}</span>
+      </a>
+
+      @if (authService.isAdmin()) {
+        <div class="my-2 mx-2 h-px bg-slate-200 dark:bg-slate-800"></div>
+        <div class="px-3 pt-2 pb-1 text-[11px] font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500">ADMINISTRATION</div>
+
+        <a mat-list-item routerLink="/admin/users" routerLinkActive="bg-sky-100/70 text-sky-700 font-semibold dark:bg-sky-950/60 dark:text-sky-300 rounded-md" (click)="isMobile() && sidenav.close()">
+          <mat-icon matListItemIcon>group</mat-icon>
+          <span matListItemTitle>{{ i18n.t().nav.users }}</span>
+        </a>
+
+        <a mat-list-item routerLink="/admin/technicians" routerLinkActive="bg-sky-100/70 text-sky-700 font-semibold dark:bg-sky-950/60 dark:text-sky-300 rounded-md" (click)="isMobile() && sidenav.close()">
+          <mat-icon matListItemIcon>engineering</mat-icon>
+          <span matListItemTitle>{{ i18n.t().nav.technicians }}</span>
+        </a>
+      }
+
+      <div class="my-2 mx-2 h-px bg-slate-200 dark:bg-slate-800"></div>
+
+      <a mat-list-item routerLink="/profile" routerLinkActive="bg-sky-100/70 text-sky-700 font-semibold dark:bg-sky-950/60 dark:text-sky-300 rounded-md" (click)="isMobile() && sidenav.close()">
+        <mat-icon matListItemIcon>person_outline</mat-icon>
+        <span matListItemTitle>{{ i18n.t().nav.profile }}</span>
+      </a>
+    </mat-nav-list>
+
+    <div class="flex items-center justify-between p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+      <div class="flex flex-col overflow-hidden min-w-0 pr-2">
+        <span class="text-sm font-semibold truncate text-slate-900 dark:text-slate-100">{{ authService.user()?.fullName }}</span>
+        <span class="text-xs text-slate-500 dark:text-slate-400">{{ roleLabel() }}</span>
+      </div>
+      <button mat-icon-button (click)="logout()" [title]="i18n.t().nav.logout">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </div>
+  </mat-sidenav>
+
+  <!-- Main Content Layout -->
+  <mat-sidenav-content class="flex flex-col h-screen overflow-y-auto bg-slate-50 dark:bg-slate-950">
+    <mat-toolbar color="primary" class="sticky top-0 z-40 shadow-xs flex items-center">
+      @if (isMobile()) {
+        <button mat-icon-button (click)="sidenav.toggle()" aria-label="Toggle menu">
+          <mat-icon>menu</mat-icon>
+        </button>
+      }
+
+      <span class="text-lg font-semibold ml-2">{{ i18n.t().app.title }}</span>
+
+      <span class="flex-1"></span>
+
+      <!-- Language Selector Menu -->
+      <button mat-button [matMenuTriggerFor]="langMenu" class="flex items-center gap-1 font-semibold text-sm">
+        <mat-icon>translate</mat-icon>
+        <span>{{ i18n.currentLang() === 'es' ? 'ES' : 'EN' }}</span>
+        <mat-icon class="-ml-1">arrow_drop_down</mat-icon>
+      </button>
+      <mat-menu #langMenu="matMenu">
+        <button mat-menu-item (click)="setLang('en')" [class.font-bold]="i18n.currentLang() === 'en'" [class.text-sky-700]="i18n.currentLang() === 'en'">
+          <span>English (EN)</span>
+        </button>
+        <button mat-menu-item (click)="setLang('es')" [class.font-bold]="i18n.currentLang() === 'es'" [class.text-sky-700]="i18n.currentLang() === 'es'">
+          <span>Español (ES)</span>
+        </button>
+      </mat-menu>
+
+      <!-- User Role Chip & Menu -->
+      <div class="flex items-center gap-2 ml-3">
+        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-xs">{{ roleLabel() }}</span>
+        <button mat-icon-button [matMenuTriggerFor]="userMenu" [attr.aria-label]="i18n.t().nav.profile">
+          <mat-icon>account_circle</mat-icon>
+        </button>
+        <mat-menu #userMenu="matMenu">
+          <div class="flex flex-col gap-1 p-4" (click)="$event.stopPropagation()">
+            <strong class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ authService.user()?.fullName }}</strong>
+            <small class="text-xs text-slate-500 dark:text-slate-400">{{ authService.user()?.email }}</small>
+            <span class="mt-1 text-xs text-sky-700 dark:text-sky-400 font-medium">{{ authService.user()?.site }} • {{ authService.user()?.area }}</span>
+          </div>
+          <mat-divider></mat-divider>
+          <a mat-menu-item routerLink="/profile">
+            <mat-icon>manage_accounts</mat-icon>
+            <span>{{ i18n.t().nav.profile }}</span>
+          </a>
+          <button mat-menu-item (click)="logout()">
+            <mat-icon>exit_to_app</mat-icon>
+            <span>{{ i18n.t().nav.logout }}</span>
+          </button>
+        </mat-menu>
+      </div>
+    </mat-toolbar>
+
+    <main class="flex-1 w-full">
+      <router-outlet></router-outlet>
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

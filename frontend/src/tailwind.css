@@ -1,0 +1,26 @@
+/* Tailwind CSS 4: CSS-first configuration. Design tokens live in @theme; utilities are generated from the templates. */
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #eef6ff;
+  --color-brand-100: #d9eaff;
+  --color-brand-500: #1f6feb;
+  --color-brand-600: #1458c7;
+  --color-brand-700: #0f45a0;
+  --color-ink: #1b2430;
+  --color-surface: #ffffff;
+  --color-canvas: #f5f7fa;
+  --font-sans: "Roboto", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer components {
+  .badge {
+    @apply inline-flex items-center justify-center px-2.5 py-0.5 rounded-full border text-xs font-semibold tracking-wide uppercase whitespace-nowrap transition-colors;
+  }
+}
+
+/*
+ * Material interplay: Angular Material component styles are NOT inside a cascade layer, so they beat Tailwind's
+ * @layer utilities. Width/min-width constraints on Material hosts (mat-sidenav, mat-form-field) therefore use
+ * Tailwind's important modifier (e.g. `w-64!`); everything else is plain utilities.
+ */

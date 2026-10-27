@@ -1,0 +1,157 @@
+<div class="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-slate-50 dark:bg-slate-950">
+  <mat-card class="w-full max-w-[520px] p-6 sm:p-8 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+    <div class="text-center mb-6">
+      <div class="inline-flex items-center justify-center w-14 h-14 mb-3 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-400">
+        <mat-icon class="text-[32px] w-8 h-8 flex items-center justify-center">person_add_outline</mat-icon>
+      </div>
+      <h1 class="m-0 mb-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ i18n.t().auth.registerTitle }}</h1>
+      <p class="m-0 text-sm text-slate-500 dark:text-slate-400">{{ i18n.t().auth.registerSubtitle }}</p>
+    </div>
+
+    <mat-card-content>
+      @if (problem()) {
+        <app-problem-alert [problem]="problem()" (dismissed)="problem.set(null)"></app-problem-alert>
+      }
+
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-3" novalidate>
+        <!-- Document -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>{{ i18n.t().auth.documentLabel }}</mat-label>
+          <input
+            matInput
+            formControlName="document"
+            placeholder="1020304050"
+            autocomplete="off">
+          <mat-icon matPrefix>badge</mat-icon>
+          @if (registerForm.get('document')?.hasError('required')) {
+            <mat-error>{{ i18n.t().validation.required }}</mat-error>
+          }
+          @if (registerForm.get('document')?.hasError('pattern')) {
+            <mat-error>{{ i18n.t().validation.documentFormat }}</mat-error>
+          }
+          @if (registerForm.get('document')?.hasError('serverError')) {
+            <mat-error>{{ registerForm.get('document')?.getError('serverError') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Full Name -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>{{ i18n.t().auth.fullNameLabel }}</mat-label>
+          <input
+            matInput
+            formControlName="fullName"
+            placeholder="Laura Gomez"
+            autocomplete="name">
+          <mat-icon matPrefix>person_outline</mat-icon>
+          @if (registerForm.get('fullName')?.hasError('required')) {
+            <mat-error>{{ i18n.t().validation.required }}</mat-error>
+          }
+          @if (registerForm.get('fullName')?.hasError('minlength') || registerForm.get('fullName')?.hasError('maxlength')) {
+            <mat-error>{{ i18n.t().validation.range }} (2 - 120)</mat-error>
+          }
+          @if (registerForm.get('fullName')?.hasError('serverError')) {
+            <mat-error>{{ registerForm.get('fullName')?.getError('serverError') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Email -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>{{ i18n.t().auth.emailLabel }}</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            placeholder="laura.gomez@helpflow.example"
+            autocomplete="email">
+          <mat-icon matPrefix>mail_outline</mat-icon>
+          @if (registerForm.get('email')?.hasError('required')) {
+            <mat-error>{{ i18n.t().validation.required }}</mat-error>
+          }
+          @if (registerForm.get('email')?.hasError('email')) {
+            <mat-error>{{ i18n.t().validation.email }}</mat-error>
+          }
+          @if (registerForm.get('email')?.hasError('corporateEmail')) {
+            <mat-error>{{ i18n.t().validation.corporateEmail }}</mat-error>
+          }
+          @if (registerForm.get('email')?.hasError('serverError')) {
+            <mat-error>{{ registerForm.get('email')?.getError('serverError') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Password -->
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>{{ i18n.t().auth.passwordLabel }}</mat-label>
+          <input
+            matInput
+            [type]="hidePassword() ? 'password' : 'text'"
+            formControlName="password"
+            autocomplete="new-password">
+          <mat-icon matPrefix>lock_outline</mat-icon>
+          <button
+            type="button"
+            mat-icon-button
+            matSuffix
+            (click)="hidePassword.set(!hidePassword())"
+            [attr.aria-label]="'Toggle password visibility'">
+            <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (registerForm.get('password')?.hasError('required')) {
+            <mat-error>{{ i18n.t().validation.required }}</mat-error>
+          }
+          @if (registerForm.get('password')?.hasError('minlength')) {
+            <mat-error>{{ i18n.t().validation.minLength }} (min. 8)</mat-error>
+          }
+          @if (registerForm.get('password')?.hasError('serverError')) {
+            <mat-error>{{ registerForm.get('password')?.getError('serverError') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <!-- Site & Area in grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>{{ i18n.t().auth.siteLabel }}</mat-label>
+            <input
+              matInput
+              formControlName="site"
+              placeholder="BOGOTA">
+            <mat-icon matPrefix>business</mat-icon>
+            @if (registerForm.get('site')?.hasError('required')) {
+              <mat-error>{{ i18n.t().validation.required }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>{{ i18n.t().auth.areaLabel }}</mat-label>
+            <input
+              matInput
+              formControlName="area"
+              placeholder="Finance">
+            <mat-icon matPrefix>work_outline</mat-icon>
+            @if (registerForm.get('area')?.hasError('required')) {
+              <mat-error>{{ i18n.t().validation.required }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          class="h-12 mt-2 text-base font-semibold rounded-lg"
+          [disabled]="isSubmitting()">
+          @if (isSubmitting()) {
+            <mat-spinner diameter="20" class="inline-block mx-auto"></mat-spinner>
+          } @else {
+            <span>{{ i18n.t().auth.registerButton }}</span>
+          }
+        </button>
+      </form>
+    </mat-card-content>
+
+    <div class="mt-6 pt-4 text-center border-t border-slate-200 dark:border-slate-800">
+      <a routerLink="/login" class="text-sm font-medium text-sky-700 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300 hover:underline">
+        {{ i18n.t().auth.haveAccount }}
+      </a>
+    </div>
+  </mat-card>
+</div>

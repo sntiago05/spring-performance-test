@@ -1,0 +1,231 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-5">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-baseline gap-3">
+      <h1 class="m-0 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ i18n.t().tickets.listTitle }}</h1>
+      <span class="text-sm text-slate-500 dark:text-slate-400">
+        {{ totalElements() }} {{ i18n.t().nav.tickets }}
+      </span>
+    </div>
+
+    <div class="flex items-center gap-2">
+      @if (authService.isUser() || authService.isAdmin()) {
+        <a mat-flat-button color="primary" routerLink="/tickets/new">
+          <mat-icon>add</mat-icon>
+          <span>{{ i18n.t().tickets.createTitle }}</span>
+        </a>
+      }
+      <button mat-icon-button (click)="fetchTickets()" [title]="'Refresh'">
+        <mat-icon>refresh</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  @if (problem()) {
+    <app-problem-alert [problem]="problem()" (dismissed)="problem.set(null)"></app-problem-alert>
+  }
+
+  <!-- Filters Card -->
+  <mat-card class="p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+    <form [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Status Filter -->
+        <mat-form-field appearance="outline" class="min-w-[140px]! flex-1">
+          <mat-label>{{ i18n.t().tickets.statusField }}</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="">{{ i18n.t().app.all }}</mat-option>
+            @for (st of statusesList; track st) {
+              <mat-option [value]="st">{{ i18n.t().enums.statuses[st] }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Priority Filter -->
+        <mat-form-field appearance="outline" class="min-w-[140px]! flex-1">
+          <mat-label>{{ i18n.t().tickets.priorityField }}</mat-label>
+          <mat-select formControlName="priority">
+            <mat-option value="">{{ i18n.t().app.all }}</mat-option>
+            @for (pr of prioritiesList; track pr) {
+              <mat-option [value]="pr">{{ i18n.t().enums.priorities[pr] }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Category Filter -->
+        <mat-form-field appearance="outline" class="min-w-[140px]! flex-1">
+          <mat-label>{{ i18n.t().tickets.categoryField }}</mat-label>
+          <mat-select formControlName="category">
+            <mat-option value="">{{ i18n.t().app.all }}</mat-option>
+            @for (cat of categoriesList; track cat) {
+              <mat-option [value]="cat">{{ i18n.t().enums.categories[cat] }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Admin Filters -->
+        @if (authService.isAdmin()) {
+          <mat-form-field appearance="outline" class="min-w-[100px]! max-w-[120px]! flex-1">
+            <mat-label>{{ i18n.t().tickets.requesterFilter }}</mat-label>
+            <input matInput type="number" formControlName="requesterId" placeholder="ID">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="min-w-[100px]! max-w-[120px]! flex-1">
+            <mat-label>{{ i18n.t().tickets.technicianFilter }}</mat-label>
+            <input matInput type="number" formControlName="technicianId" placeholder="ID">
+          </mat-form-field>
+        }
+
+        <!-- Overdue Checkbox -->
+        <div class="flex items-center px-2">
+          <mat-checkbox formControlName="overdue" color="warn">
+            {{ i18n.t().tickets.overdueOnly }}
+          </mat-checkbox>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <button mat-flat-button color="primary" type="submit">
+            <mat-icon>filter_list</mat-icon>
+            <span>{{ i18n.t().app.filter }}</span>
+          </button>
+          <button mat-button type="button" (click)="resetFilters()">
+            <span>{{ i18n.t().app.reset }}</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </mat-card>
+
+  <!-- Table Card -->
+  <mat-card class="p-0 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
+    @if (loading()) {
+      <app-loading></app-loading>
+    } @else if (tickets().length === 0) {
+      <app-empty-state
+        icon="inbox"
+        [title]="'No tickets match the selected criteria'"
+        [actionText]="i18n.t().app.reset"
+        (actionClicked)="resetFilters()">
+      </app-empty-state>
+    } @else {
+      <div class="w-full overflow-x-auto">
+        <table
+          mat-table
+          [dataSource]="tickets()"
+          matSort
+          [matSortActive]="sortField()"
+          [matSortDirection]="sortDirection()"
+          (matSortChange)="onSortChange($event)"
+          class="w-full bg-transparent"
+          aria-label="Support Tickets Table">
+
+          <!-- ID Column -->
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ i18n.t().tickets.id }}</th>
+            <td mat-cell *matCellDef="let t" class="w-[70px] font-bold text-slate-500 dark:text-slate-400 text-xs">#{{ t.id }}</td>
+          </ng-container>
+
+          <!-- Title Column -->
+          <ng-container matColumnDef="title">
+            <th mat-header-cell *matHeaderCellDef>{{ i18n.t().tickets.titleField }}</th>
+            <td mat-cell *matCellDef="let t" class="max-w-[280px]">
+              <span class="block font-semibold text-slate-900 dark:text-slate-100 truncate">{{ t.title }}</span>
+              <span class="block text-xs text-slate-500 dark:text-slate-400 truncate">{{ t.site }} • {{ t.affectedAsset }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Category Column -->
+          <ng-container matColumnDef="category">
+            <th mat-header-cell *matHeaderCellDef>{{ i18n.t().tickets.categoryField }}</th>
+            <td mat-cell *matCellDef="let t">
+              <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">{{ t.category }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Priority Column -->
+          <ng-container matColumnDef="priority">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ i18n.t().tickets.priorityField }}</th>
+            <td mat-cell *matCellDef="let t">
+              <div class="inline-flex items-center gap-1.5">
+                <app-priority-badge [priority]="t.priority"></app-priority-badge>
+                @if (t.escalated) {
+                  <mat-icon class="text-sm w-4 h-4 flex items-center justify-center text-orange-600 dark:text-orange-400" [matTooltip]="i18n.t().tickets.slaEscalatedBadge">trending_up</mat-icon>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ i18n.t().tickets.statusField }}</th>
+            <td mat-cell *matCellDef="let t">
+              <app-status-badge [status]="t.status"></app-status-badge>
+            </td>
+          </ng-container>
+
+          <!-- Requester Column -->
+          <ng-container matColumnDef="requester">
+            <th mat-header-cell *matHeaderCellDef>{{ i18n.t().tickets.requesterField }}</th>
+            <td mat-cell *matCellDef="let t">
+              <span class="font-medium text-slate-900 dark:text-slate-100 text-sm">{{ t.requester.fullName }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Technician Column -->
+          <ng-container matColumnDef="technician">
+            <th mat-header-cell *matHeaderCellDef>{{ i18n.t().tickets.technicianField }}</th>
+            <td mat-cell *matCellDef="let t">
+              @if (t.technician) {
+                <span class="font-medium text-slate-900 dark:text-slate-100 text-sm">{{ t.technician.fullName }}</span>
+                <small class="block text-xs text-slate-500 dark:text-slate-400">({{ t.technician.code }})</small>
+              } @else {
+                <span class="italic text-xs text-slate-400 dark:text-slate-500">{{ i18n.t().tickets.unassigned }}</span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- SLA Due Date Column -->
+          <ng-container matColumnDef="slaDueAt">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ i18n.t().tickets.slaDueField }}</th>
+            <td mat-cell *matCellDef="let t">
+              @let countdown = (t.slaDueAt | slaCountdown:t.status === 'RESUELTO' || t.status === 'CERRADO');
+              <div class="flex flex-col gap-0.5">
+                <span
+                  class="text-xs font-semibold"
+                  [ngClass]="countdown.isOverdue ? 'text-red-600 dark:text-red-400 font-bold' : 'text-sky-700 dark:text-sky-300'">
+                  {{ countdown.text }}
+                </span>
+                <span class="text-xs text-slate-500 dark:text-slate-400">{{ t.slaDueAt | localizedDate:'short' }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Created At Column -->
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ i18n.t().tickets.createdAtField }}</th>
+            <td mat-cell *matCellDef="let t" class="text-xs text-slate-500 dark:text-slate-400">
+              {{ t.createdAt | localizedDate:'short' }}
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns;"
+            class="cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 focus-visible:outline-2 focus-visible:outline-sky-500 focus-visible:outline-offset-[-2px]"
+            (click)="onRowClick(row)"
+            tabindex="0"
+            (keyup.enter)="onRowClick(row)">
+          </tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="totalElements()"
+        [pageSize]="pageSize()"
+        [pageIndex]="pageIndex()"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="onPageChange($event)"
+        aria-label="Select page of tickets">
+      </mat-paginator>
+    }
+  </mat-card>
+</div>

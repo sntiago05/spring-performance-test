@@ -10,17 +10,17 @@ How to start, test and troubleshoot the whole system. All commands run from the 
 | JDK 21+ | building/testing outside Docker | `java -version` |
 | `curl`, `jq`, `openssl` | smoke test and scripts | `jq --version` |
 
-Free ports: 8080, 8081, 9090, 3000 and 5433 (change them in `.env`).
+Free ports: 4200 (frontend), 8080, 8081, 9090, 3000 and 5433 (change them in `.env`).
 
 ## 2. Start everything
 
 ```bash
 ./scripts/setup-env.sh                 # once: creates .env with random secrets
-docker compose up -d --build           # first build takes a few minutes
-docker compose ps                      # wait until db, both services show (healthy)
+docker compose up -d --build           # builds and starts frontend, backend services, DB and monitoring
+docker compose ps                      # wait until db, both services and frontend show (healthy)
 ```
 
-Startup order is enforced with health checks: `db` -> `technician-dispatch-service` -> `support-ticket-service` -> `prometheus` -> `grafana`.
+Startup order is enforced with health checks: `db` -> `technician-dispatch-service` -> `support-ticket-service` -> `frontend` -> `prometheus` -> `grafana`.
 `depends_on` only orders start-up; the ticket service additionally tolerates the dispatch service being down.
 
 Credentials (from `.env`): admin `admin@helpflow.example` + `BOOTSTRAP_ADMIN_PASSWORD`; technicians
@@ -32,18 +32,20 @@ docker compose stop                                # stop, keep containers
 docker compose down                                # remove containers, keep data (volumes)
 docker compose down -v                             # remove containers AND data
 docker compose up -d --build support-ticket-service   # rebuild one service after code changes
+docker compose up -d db                            # start / lift only the PostgreSQL database
 ```
 
 ## 3. Verify it works (in this order)
 
 1. **Health:** `curl -s localhost:8080/actuator/health` and `curl -s localhost:8081/actuator/health` -> `{"status":"UP"}`.
 2. **Smoke test (about 30 s):** `./scripts/smoke-test.sh` -> `Result: 31 passed, 0 failed`.
-3. **Swagger:** open http://localhost:8080/swagger-ui.html and follow section 4.
-4. **SLA walkthrough:** `./scripts/demo-sla.sh` registers tickets, moves two of them back in time in PostgreSQL, runs the SLA review
+3. **Web Frontend:** open http://localhost:4200 to access the HelpFlow web application.
+4. **Swagger:** open http://localhost:8080/swagger-ui.html and follow section 4.
+5. **SLA walkthrough:** `./scripts/demo-sla.sh` registers tickets, moves two of them back in time in PostgreSQL, runs the SLA review
    and prints escalated/breached tickets, their history and the metrics.
-5. **Prometheus:** http://localhost:9090/targets -> both services `UP`. Query `helpflow_tickets_registered_total`.
-6. **Grafana:** http://localhost:3000 -> Dashboards -> HelpFlow -> *HelpFlow - Services Overview*.
-7. **Automated tests:** `./mvnw clean verify` (see section 6).
+6. **Prometheus:** http://localhost:9090/targets -> services `UP`. Query `helpflow_tickets_registered_total`.
+7. **Grafana:** http://localhost:3000 -> Dashboards -> HelpFlow -> *HelpFlow - Services Overview*.
+8. **Automated tests:** `./mvnw clean verify` (see section 6).
 
 ## 4. Manual test with Swagger UI
 
@@ -78,8 +80,18 @@ PostgreSQL container (`postgres:16-alpine`) and do not touch the Compose databas
 ## 7. Useful inspection commands
 
 ```bash
-docker compose exec db psql -U helpflow -d helpflow -c "select id,status,priority,sla_due_at,escalated,sla_breached from tickets order by id desc limit 10;"
-docker compose exec db psql -U helpflow -d helpflow -c "select version,description,success from flyway_schema_history;"
+# Interactive psql session inside the database container
+docker compose exec -it db psql -U helpflow -d helpflow
+
+# Quick queries without entering psql
+docker compose exec -T db psql -U helpflow -d helpflow -c "select id,status,priority,sla_due_at,escalated,sla_breached from tickets order by id desc limit 10;"
+docker compose exec -T db psql -U helpflow -d helpflow -c "select version,description,success from flyway_schema_history;"
+
+# Check for duplicate records
+docker compose exec -T db psql -U helpflow -d helpflow -c "select full_name, count(*) from users group by full_name having count(*) > 1;"
+docker compose exec -T db psql -U helpflow -d helpflow -c "select title, affected_asset, count(*) from tickets group by title, affected_asset having count(*) > 1;"
+
+# Metrics & Prometheus queries
 curl -s localhost:8080/actuator/prometheus | grep ^helpflow_
 curl -s 'localhost:9090/api/v1/query?query=helpflow_tickets_overdue' | jq .
 ```
@@ -110,7 +122,27 @@ curl -s 'localhost:9090/api/v1/query?query=helpflow_tickets_overdue' | jq .
 | Spanish text shows `?` characters | Terminal not UTF-8 | `export LANG=C.UTF-8` |
 | 409 `concurrent-modification` | Two requests changed the same ticket at once | Reload the ticket and retry |
 
-## 9. Reset to a clean state
+## 9. Database maintenance, cleaning duplicates and reset
+
+### 9.1 Lift and connect to the database
+
+If the stack is stopped or you only need PostgreSQL:
+```bash
+docker compose up -d db
+docker compose exec -it db psql -U helpflow -d helpflow
+```
+
+### 9.2 Clean duplicates (automated script)
+
+When repeated tests, scripts or manual registrations generate duplicate records:
+```bash
+./scripts/clean-duplicates.sh
+```
+This runs an atomic SQL transaction that:
+1. Identifies duplicate tickets with identical title, site, and affected asset, keeps the one with the most advanced state (`CERRADO` > `RESUELTO` > `EN_PROGRESO` > `ASIGNADO` > `ABIERTO`), and deletes duplicates along with their history and assignments (releasing technician capacity).
+2. Identifies duplicate user records with the same name that are not referenced by tickets or technician profiles, and deletes them.
+
+### 9.3 Reset to a clean state (wipe everything)
 
 ```bash
 docker compose down -v && docker compose up -d --build     # empty database, metrics and dashboards re-provisioned

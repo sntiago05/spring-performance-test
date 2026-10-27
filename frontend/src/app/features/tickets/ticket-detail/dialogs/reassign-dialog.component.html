@@ -1,0 +1,59 @@
+<h2 mat-dialog-title class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ i18n.t().tickets.reassignDialogTitle }}</h2>
+
+<mat-dialog-content class="min-w-[320px] max-w-[520px] pt-2">
+  @if (problem()) {
+    <app-problem-alert [problem]="problem()" (dismissed)="problem.set(null)"></app-problem-alert>
+  }
+
+  <form [formGroup]="form" class="flex flex-col gap-3 mt-2" (ngSubmit)="onSubmit()">
+    <!-- Technician Select -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>{{ i18n.t().tickets.selectTechnicianLabel }}</mat-label>
+      <mat-select formControlName="technicianId" [disabled]="loadingTechs()">
+        @for (tech of technicians(); track tech.id) {
+          <mat-option [value]="tech.id">
+            <span [class.font-semibold]="isCompatible(tech)" [class.text-emerald-700]="isCompatible(tech)" [class.dark:text-emerald-400]="isCompatible(tech)">
+              {{ tech.code }} - {{ tech.fullName }} ({{ tech.specialty }}, {{ tech.site }}, cap: {{ tech.maxActiveTickets }})
+            </span>
+          </mat-option>
+        }
+      </mat-select>
+      <mat-hint>Ticket Category: <strong>{{ data.ticket.category }}</strong> • Site: <strong>{{ data.ticket.site }}</strong></mat-hint>
+      @if (form.get('technicianId')?.hasError('required')) {
+        <mat-error>{{ i18n.t().validation.required }}</mat-error>
+      }
+    </mat-form-field>
+
+    <!-- Observations -->
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>{{ i18n.t().tickets.observationsLabel }}</mat-label>
+      <textarea
+        matInput
+        rows="4"
+        formControlName="observations"
+        placeholder="Reason for reassignment or initial dispatch notes..."
+        maxlength="1000">
+      </textarea>
+      @if (form.get('observations')?.hasError('required')) {
+        <mat-error>{{ i18n.t().validation.required }}</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="pt-4 gap-2">
+  <button mat-button [mat-dialog-close]="null" [disabled]="isSubmitting()">
+    {{ i18n.t().app.cancel }}
+  </button>
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="onSubmit()"
+    [disabled]="isSubmitting() || form.invalid">
+    @if (isSubmitting()) {
+      <mat-spinner diameter="20"></mat-spinner>
+    } @else {
+      <span>{{ i18n.t().app.confirm }}</span>
+    }
+  </button>
+</mat-dialog-actions>

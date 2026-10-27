@@ -1,0 +1,62 @@
+<h2 mat-dialog-title class="text-lg font-bold text-slate-900 dark:text-slate-100">{{ i18n.t().tickets.changeStatusDialogTitle }}</h2>
+
+<mat-dialog-content class="min-w-[320px] max-w-[480px] pt-2">
+  @if (problem()) {
+    <app-problem-alert [problem]="problem()" (dismissed)="problem.set(null)"></app-problem-alert>
+  }
+
+  <form [formGroup]="form" class="flex flex-col gap-3 mt-2" (ngSubmit)="onSubmit()">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>{{ i18n.t().tickets.targetStatusLabel }}</mat-label>
+      <mat-select formControlName="status">
+        @for (st of availableStatuses; track st) {
+          <mat-option [value]="st">{{ i18n.t().enums.statuses[st] }} ({{ st }})</mat-option>
+        }
+      </mat-select>
+      @if (form.get('status')?.hasError('required')) {
+        <mat-error>{{ i18n.t().validation.required }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>{{ i18n.t().tickets.observationsLabel }}</mat-label>
+      <textarea
+        matInput
+        rows="4"
+        formControlName="observations"
+        placeholder="Enter required context or progress notes..."
+        maxlength="1000">
+      </textarea>
+      <mat-hint>
+        @if (form.get('status')?.value === 'CANCELADO') {
+          <span class="text-red-600 dark:text-red-400 font-semibold">{{ i18n.t().tickets.observationsHint }}</span>
+        } @else {
+          <span>Required observations (max 1000 chars)</span>
+        }
+      </mat-hint>
+      @if (form.get('observations')?.hasError('required')) {
+        <mat-error>{{ i18n.t().validation.required }}</mat-error>
+      }
+      @if (form.get('observations')?.hasError('minlength')) {
+        <mat-error>{{ i18n.t().validation.cancelReasonMin }}</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="pt-4 gap-2">
+  <button mat-button [mat-dialog-close]="null" [disabled]="isSubmitting()">
+    {{ i18n.t().app.cancel }}
+  </button>
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="onSubmit()"
+    [disabled]="isSubmitting() || form.invalid">
+    @if (isSubmitting()) {
+      <mat-spinner diameter="20"></mat-spinner>
+    } @else {
+      <span>{{ i18n.t().app.confirm }}</span>
+    }
+  </button>
+</mat-dialog-actions>

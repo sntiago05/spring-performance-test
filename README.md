@@ -4,12 +4,13 @@ HelpFlow handles IT support requests for teams spread over several sites. It rep
 spreadsheets with a system that registers tickets, calculates their SLA, assigns them to a technician,
 keeps a full audit trail and escalates the ones that are about to miss their deadline.
 
-It is made of **two independent microservices**:
+It is made of **two microservices and a modern web application**:
 
-| Service | Port | Responsibility |
+| Service / App | Port | Responsibility |
 |---|---|---|
 | `support-ticket-service` | 8080 | Central service: users, technicians, tickets, assignment, SLA, JWT security, PostgreSQL |
 | `technician-dispatch-service` | 8081 | Lightweight simulated external service: suggests a technician and an estimated time. No database, no security |
+| `frontend` (HelpFlow Web) | 4200 | Angular 19 + Material SPA with reverse proxy to backend, role-based dashboards and ticket management |
 
 Around them: **PostgreSQL**, **Prometheus** (metrics scraping) and **Grafana** (dashboard), started with Docker Compose.
 
@@ -37,12 +38,14 @@ Requirements: Docker with Compose v2 (to run), JDK 21+ and Docker (to build and 
 
 ```bash
 ./scripts/setup-env.sh              # creates .env with random secrets (git-ignored)
-docker compose up -d --build        # PostgreSQL, both services, Prometheus, Grafana
+docker compose up -d --build        # PostgreSQL, backend services, frontend, Prometheus, Grafana
 ./scripts/smoke-test.sh             # end-to-end check against the running stack
 ```
 
 | What | URL |
 |---|---|
+| HelpFlow Web Frontend | http://localhost:4200 |
+| **Web application** (Angular 22 + Tailwind CSS 4) | http://localhost:4200 |
 | Swagger UI (support-ticket-service) | http://localhost:8080/swagger-ui.html |
 | Swagger UI (technician-dispatch-service) | http://localhost:8081/swagger-ui.html |
 | Prometheus | http://localhost:9090 |
@@ -63,6 +66,18 @@ set -a; source .env; set +a
 ./mvnw -pl technician-dispatch-service spring-boot:run     # terminal 1 (port 8081)
 ./mvnw -pl support-ticket-service spring-boot:run          # terminal 2 (port 8080)
 ```
+
+## Web application
+
+`frontend/` is an enterprise Angular 22 SPA (standalone components, signals, Angular Material for form widgets and **Tailwind CSS 4**
+for the visual layer) that consumes the main API. nginx serves it and proxies `/api/` to `support-ticket-service`, so no CORS is needed.
+Screens are role-aware: users create and follow their tickets; technicians work the tickets assigned to them (status changes with
+mandatory observations, only the valid next states are offered); admins also assign/reassign, manage users, technicians and SLA policies,
+and run the SLA review. English/Spanish at runtime (also sent as `Accept-Language`), light/dark theme, responsive from 360 px.
+The JWT lives in `sessionStorage`, never `localStorage`. See [`frontend/README.md`](frontend/README.md); it has 31 unit tests (`npm test`).
+
+![Dashboard](docs/images/web-dashboard.png)
+![Tickets](docs/images/web-tickets.png)
 
 ## Architecture
 
@@ -308,6 +323,43 @@ technician workload, and `default_batch_fetch_size`. Tickets carry an `@Version`
 conflict) and technician capacity is protected with a `PESSIMISTIC_WRITE` row lock. Assignment and escalation run
 inside `@Transactional` use cases.
 
+### Database management and maintenance
+
+* **Start / lift the database only:**
+  ```bash
+  docker compose up -d db
+  ```
+* **Enter the database (interactive psql CLI):**
+  ```bash
+  docker compose exec -it db psql -U helpflow -d helpflow
+  ```
+* **Clean duplicates automatically:**
+  Repeated smoke tests or collection runs may produce duplicate test tickets or registrations. Run:
+  ```bash
+  ./scripts/clean-duplicates.sh
+  ```
+  This identifies and removes duplicate tickets (keeping the closed/resolved one and releasing technician workload) and unreferenced duplicate user records inside a safe atomic transaction.
+* **Manual duplicate inspection and removal:**
+  ```sql
+  -- Inspect duplicates
+  SELECT title, site, affected_asset, count(*) FROM tickets GROUP BY title, site, affected_asset HAVING count(*) > 1;
+  SELECT full_name, count(*) FROM users GROUP BY full_name HAVING count(*) > 1;
+
+  -- Remove duplicate tickets keeping the most progressed status (or lowest ID)
+  WITH ranked AS (
+    SELECT id, ROW_NUMBER() OVER (
+      PARTITION BY title, site, affected_asset
+      ORDER BY CASE status WHEN 'CERRADO' THEN 1 WHEN 'RESUELTO' THEN 2 WHEN 'EN_PROGRESO' THEN 3 ELSE 4 END, id ASC
+    ) AS rn FROM tickets
+  )
+  DELETE FROM ticket_assignments WHERE ticket_id IN (SELECT id FROM ranked WHERE rn > 1);
+  -- Then delete history and tickets for those IDs.
+  ```
+* **Full database reset (clean slate):**
+  ```bash
+  docker compose down -v && docker compose up -d --build
+  ```
+
 ## Observability
 
 * **Actuator:** `/actuator/health` (+ `liveness`/`readiness`), `/actuator/info`, `/actuator/metrics` (admin), `/actuator/prometheus`.
@@ -363,6 +415,7 @@ Secrets come from the environment (`.env`, never committed). Main variables:
 ├── pom.xml                          parent (Spring Boot 4.1, Java 21)
 ├── support-ticket-service/          hexagonal service + Dockerfile + Flyway + tests
 ├── technician-dispatch-service/     lightweight service + Dockerfile + tests
+├── frontend/                        Angular 22 + Tailwind CSS 4 web app + Dockerfile (nginx)
 ├── docker-compose.yml               db, both services, prometheus, grafana
 ├── monitoring/                      prometheus.yml, Grafana provisioning and dashboard
 ├── scripts/                         setup-env, smoke-test, demo-sla
@@ -380,7 +433,7 @@ Secrets come from the environment (`.env`, never committed). Main variables:
 | Pessimistic lock on technician rows | Guarantees capacity under concurrency; optimistic retries would be the alternative |
 | JWT with Spring's resource server (Nimbus) | No extra JWT library; HS256 with a secret from the environment |
 | Prometheus counter `helpflow.tickets.registered` | `created` is a reserved Prometheus suffix and Micrometer would rename the series |
-| No Angular frontend | The specification asks for Swagger and a test collection; Swagger UI is the client |
+| Angular 19 web frontend | Web application in frontend/ with Material Design, role-based navigation and Nginx reverse proxy |
 
 ## Known limitations
 

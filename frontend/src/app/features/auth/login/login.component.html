@@ -1,0 +1,82 @@
+<div class="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-slate-50 dark:bg-slate-950">
+  <mat-card class="w-full max-w-[440px] p-6 sm:p-8 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+    <div class="text-center mb-6">
+      <div class="inline-flex items-center justify-center w-14 h-14 mb-3 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-400">
+        <mat-icon class="text-[32px] w-8 h-8 flex items-center justify-center">confirmation_number</mat-icon>
+      </div>
+      <h1 class="m-0 mb-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ i18n.t().auth.loginTitle }}</h1>
+      <p class="m-0 text-sm text-slate-500 dark:text-slate-400">{{ i18n.t().auth.loginSubtitle }}</p>
+    </div>
+
+    <mat-card-content>
+      @if (problem()) {
+        <app-problem-alert [problem]="problem()" (dismissed)="problem.set(null)"></app-problem-alert>
+      }
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-3" novalidate>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>{{ i18n.t().auth.emailLabel }}</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            placeholder="usuario@helpflow.example"
+            autocomplete="email">
+          <mat-icon matPrefix>mail_outline</mat-icon>
+          @if (loginForm.get('email')?.hasError('required')) {
+            <mat-error>{{ i18n.t().validation.required }}</mat-error>
+          }
+          @if (loginForm.get('email')?.hasError('email')) {
+            <mat-error>{{ i18n.t().validation.email }}</mat-error>
+          }
+          @if (loginForm.get('email')?.hasError('serverError')) {
+            <mat-error>{{ loginForm.get('email')?.getError('serverError') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>{{ i18n.t().auth.passwordLabel }}</mat-label>
+          <input
+            matInput
+            [type]="hidePassword() ? 'password' : 'text'"
+            formControlName="password"
+            autocomplete="current-password">
+          <mat-icon matPrefix>lock_outline</mat-icon>
+          <button
+            type="button"
+            mat-icon-button
+            matSuffix
+            (click)="hidePassword.set(!hidePassword())"
+            [attr.aria-label]="'Toggle password visibility'">
+            <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (loginForm.get('password')?.hasError('required')) {
+            <mat-error>{{ i18n.t().validation.required }}</mat-error>
+          }
+          @if (loginForm.get('password')?.hasError('serverError')) {
+            <mat-error>{{ loginForm.get('password')?.getError('serverError') }}</mat-error>
+          }
+        </mat-form-field>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          class="h-12 mt-2 text-base font-semibold rounded-lg"
+          [disabled]="isSubmitting()">
+          @if (isSubmitting()) {
+            <mat-spinner diameter="20" class="inline-block mx-auto"></mat-spinner>
+          } @else {
+            <span>{{ i18n.t().auth.loginButton }}</span>
+          }
+        </button>
+      </form>
+    </mat-card-content>
+
+    <div class="mt-6 pt-4 text-center border-t border-slate-200 dark:border-slate-800">
+      <a routerLink="/register" class="text-sm font-medium text-sky-700 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300 hover:underline">
+        {{ i18n.t().auth.noAccount }}
+      </a>
+    </div>
+  </mat-card>
+</div>
