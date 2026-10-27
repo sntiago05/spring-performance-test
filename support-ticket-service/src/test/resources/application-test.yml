@@ -1,0 +1,19 @@
+spring:
+  jpa:
+    properties:
+      hibernate:
+        generate_statistics: true
+
+app:
+  dispatch:
+    base-url: http://localhost:1 # never called: the dispatch port is mocked in integration tests
+  sla:
+    review-enabled: false # tests trigger the review explicitly
+
+logging:
+  structured:
+    format:
+      console: # plain text logs in tests
+  level:
+    root: WARN
+    com.helpflow: INFO
