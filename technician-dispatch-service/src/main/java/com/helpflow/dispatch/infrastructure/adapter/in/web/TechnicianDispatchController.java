@@ -57,22 +57,46 @@ class TechnicianDispatchController {
                  "errors": [{"field": "ticketId", "message": "ticketId must be a positive number"}]}""")))
     @ApiResponse(responseCode = "404", description = "Resource or endpoint not found",
         content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
-            schema = @Schema(implementation = ProblemDetail.class)))
+            schema = @Schema(implementation = ProblemDetail.class),
+            examples = @ExampleObject(value = """
+                {"type": "urn:helpflow:problem:resource-not-found", "title": "Resource not found", "status": 404,
+                 "detail": "The requested resource or endpoint was not found.", "instance": "/technician-dispatch/unknown",
+                 "timestamp": "2026-01-15T10:15:30Z", "traceId": "6f1c2b7e9a4d4c1f8e0b5a3d2c7e9f10"}""")))
     @ApiResponse(responseCode = "405", description = "HTTP method not allowed for this endpoint",
         content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
-            schema = @Schema(implementation = ProblemDetail.class)))
+            schema = @Schema(implementation = ProblemDetail.class),
+            examples = @ExampleObject(value = """
+                {"type": "urn:helpflow:problem:method-not-allowed", "title": "Method not allowed", "status": 405,
+                 "detail": "The HTTP method is not supported for this endpoint.", "instance": "/technician-dispatch",
+                 "timestamp": "2026-01-15T10:15:30Z", "traceId": "6f1c2b7e9a4d4c1f8e0b5a3d2c7e9f10"}""")))
     @ApiResponse(responseCode = "406", description = "Requested representation not acceptable",
         content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
-            schema = @Schema(implementation = ProblemDetail.class)))
+            schema = @Schema(implementation = ProblemDetail.class),
+            examples = @ExampleObject(value = """
+                {"type": "urn:helpflow:problem:not-acceptable", "title": "Not acceptable", "status": 406,
+                 "detail": "The requested representation cannot be served in the accepted format.", "instance": "/technician-dispatch",
+                 "timestamp": "2026-01-15T10:15:30Z", "traceId": "6f1c2b7e9a4d4c1f8e0b5a3d2c7e9f10"}""")))
     @ApiResponse(responseCode = "415", description = "Unsupported payload media type",
         content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
-            schema = @Schema(implementation = ProblemDetail.class)))
+            schema = @Schema(implementation = ProblemDetail.class),
+            examples = @ExampleObject(value = """
+                {"type": "urn:helpflow:problem:unsupported-media-type", "title": "Unsupported media type", "status": 415,
+                 "detail": "The requested media type is not supported.", "instance": "/technician-dispatch",
+                 "timestamp": "2026-01-15T10:15:30Z", "traceId": "6f1c2b7e9a4d4c1f8e0b5a3d2c7e9f10"}""")))
     @ApiResponse(responseCode = "422", description = "Domain rule violation or unprocessable entity",
         content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
-            schema = @Schema(implementation = ProblemDetail.class)))
+            schema = @Schema(implementation = ProblemDetail.class),
+            examples = @ExampleObject(value = """
+                {"type": "urn:helpflow:problem:domain-rule-violation", "title": "Unprocessable entity", "status": 422,
+                 "detail": "The request violates a domain rule.", "instance": "/technician-dispatch",
+                 "timestamp": "2026-01-15T10:15:30Z", "traceId": "6f1c2b7e9a4d4c1f8e0b5a3d2c7e9f10"}""")))
     @ApiResponse(responseCode = "500", description = "Unexpected internal server error",
         content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
-            schema = @Schema(implementation = ProblemDetail.class)))
+            schema = @Schema(implementation = ProblemDetail.class),
+            examples = @ExampleObject(value = """
+                {"type": "urn:helpflow:problem:internal-error", "title": "Internal error", "status": 500,
+                 "detail": "An unexpected error occurred. Quote the traceId when reporting it.", "instance": "/technician-dispatch",
+                 "timestamp": "2026-01-15T10:15:30Z", "traceId": "6f1c2b7e9a4d4c1f8e0b5a3d2c7e9f10"}""")))
     @PostMapping(path = "/technician-dispatch",
         consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = MediaType.APPLICATION_JSON_VALUE)

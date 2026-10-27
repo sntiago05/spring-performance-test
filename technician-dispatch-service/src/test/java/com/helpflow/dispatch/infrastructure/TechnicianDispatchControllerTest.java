@@ -16,6 +16,8 @@ import com.helpflow.dispatch.domain.exception.DomainRuleViolationException;
 import com.helpflow.dispatch.infrastructure.exception.DispatchInfrastructureException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -172,6 +174,17 @@ class TechnicianDispatchControllerTest {
                 .andExpect(jsonPath("$.traceId").exists());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"/technician-dispatch/unknown", "/a/b/c", "/index.html", "/actuator/nope"})
+    void unmappedPathsReturnProblemDetail404(String path) throws Exception {
+        mockMvc.perform(get(path))
+                .andExpect(status().isNotFound())
+                .andExpect(header().string("Content-Type", "application/problem+json"))
+                .andExpect(jsonPath("$.type").value("urn:helpflow:problem:resource-not-found"))
+                .andExpect(jsonPath("$.instance").value(path))
+                .andExpect(jsonPath("$.traceId").exists());
+    }
+
     @Test
     void resourceNotFoundReturnsProblemDetail404() throws Exception {
         mockMvc.perform(get("/non-existent-resource")
@@ -306,5 +319,14 @@ class TechnicianDispatchControllerTest {
                 .andExpect(jsonPath("$.paths['/technician-dispatch'].post.responses['500']").exists())
                 .andExpect(jsonPath("$.paths['/technician-dispatch'].post.responses['400'].content['application/problem+json']").exists())
                 .andExpect(jsonPath("$.paths['/technician-dispatch'].post.responses['500'].content['application/problem+json']").exists());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"400", "404", "405", "406", "415", "422", "500"})
+    void openApiDocumentsAnExampleForEveryProblemResponse(String code) throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/technician-dispatch'].post.responses['" + code
+                        + "'].content['application/problem+json'].example.type").isNotEmpty());
     }
 }
