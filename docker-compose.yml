@@ -1,0 +1,91 @@
+# HelpFlow: support-ticket-service + technician-dispatch-service + PostgreSQL + Prometheus + Grafana.
+# Requires a .env file (run ./scripts/setup-env.sh). Inside the network services talk by service name;
+# the published ports are only for the host.
+name: helpflow
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: helpflow
+      POSTGRES_USER: ${DB_USER:-helpflow}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required, run ./scripts/setup-env.sh}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${DB_HOST_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d helpflow"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  technician-dispatch-service:
+    build:
+      context: .
+      dockerfile: technician-dispatch-service/Dockerfile
+    image: helpflow/technician-dispatch-service:latest
+    ports:
+      - "${DISPATCH_PORT:-8081}:8081"
+    restart: unless-stopped
+
+  support-ticket-service:
+    build:
+      context: .
+      dockerfile: support-ticket-service/Dockerfile
+    image: helpflow/support-ticket-service:latest
+    depends_on:
+      db:
+        condition: service_healthy
+      technician-dispatch-service:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/helpflow
+      DB_USER: ${DB_USER:-helpflow}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required, run ./scripts/setup-env.sh}
+      DISPATCH_BASE_URL: http://technician-dispatch-service:8081
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-admin@helpflow.example}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      BOOTSTRAP_TECHNICIAN_PASSWORD: ${BOOTSTRAP_TECHNICIAN_PASSWORD:-}
+    ports:
+      - "${SUPPORT_TICKET_PORT:-8080}:8080"
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    depends_on:
+      - support-ticket-service
+      - technician-dispatch-service
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.6.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required, run ./scripts/setup-env.sh}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  prometheus-data:
+  grafana-data:

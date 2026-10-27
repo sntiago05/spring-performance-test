@@ -1,0 +1,19 @@
+# One central Prometheus scrapes every service by its Docker service name.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: support-ticket-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["support-ticket-service:8080"]
+
+  - job_name: technician-dispatch-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["technician-dispatch-service:8081"]
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]

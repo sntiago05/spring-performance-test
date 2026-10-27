@@ -5,6 +5,7 @@ FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
 COPY pom.xml ./
 COPY technician-dispatch-service/pom.xml technician-dispatch-service/pom.xml
+COPY support-ticket-service/pom.xml support-ticket-service/pom.xml
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -B -q -pl technician-dispatch-service -am dependency:go-offline -DskipTests || true
 COPY technician-dispatch-service/src technician-dispatch-service/src
