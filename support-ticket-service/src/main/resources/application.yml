@@ -82,6 +82,7 @@ logging:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+    custom-css-url: /swagger-ui-custom.css
     tags-sorter: alpha
     operations-sorter: method
     display-request-duration: true
