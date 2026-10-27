@@ -2,7 +2,7 @@ package com.helpflow.supportticket.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.helpflow.supportticket.support.AbstractIntegrationTest;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +43,7 @@ class TicketAuthorizationIT extends AbstractIntegrationTest {
         MvcResult denied = getJson("/tickets/" + ticketId, stranger);
 
         assertThat(status(denied)).isEqualTo(403);
-        assertThat(json(denied).get("type").asText()).isEqualTo("urn:helpflow:problem:ticket-access-denied");
+        assertThat(json(denied).get("type").asString()).isEqualTo("urn:helpflow:problem:ticket-access-denied");
         assertThat(status(getJson("/tickets/" + ticketId + "/history", stranger))).isEqualTo(403);
         assertThat(status(getJson("/tickets/" + ticketId + "/assignments", stranger))).isEqualTo(403);
     }
@@ -77,7 +77,7 @@ class TicketAuthorizationIT extends AbstractIntegrationTest {
 
         assertThat(status(read)).isEqualTo(403);
         assertThat(status(write)).isEqualTo(403);
-        assertThat(json(write).get("type").asText()).isEqualTo("urn:helpflow:problem:ticket-manage-denied");
+        assertThat(json(write).get("type").asString()).isEqualTo("urn:helpflow:problem:ticket-manage-denied");
         assertThat(json(getJson("/tickets", otherTechnician)).get("totalElements").asInt()).isZero();
     }
 
@@ -103,7 +103,7 @@ class TicketAuthorizationIT extends AbstractIntegrationTest {
         assertThat(status(create)).isEqualTo(403);
         assertThat(status(reassign)).isEqualTo(403);
         assertThat(status(cancel)).isEqualTo(403);
-        assertThat(json(cancel).get("type").asText()).isEqualTo("urn:helpflow:problem:cancel-admin-only");
+        assertThat(json(cancel).get("type").asString()).isEqualTo("urn:helpflow:problem:cancel-admin-only");
     }
 
     @Test
@@ -133,7 +133,7 @@ class TicketAuthorizationIT extends AbstractIntegrationTest {
         for (String token : new String[] {owner, assignedTechnician, admin}) {
             MvcResult result = getJson("/sla-policies", token);
             assertThat(status(result)).isEqualTo(200);
-            assertThat(json(result).findValuesAsText("priority")).containsExactly("BAJA", "MEDIA", "ALTA", "CRITICA");
+            assertThat(json(result).findValuesAsString("priority")).containsExactly("BAJA", "MEDIA", "ALTA", "CRITICA");
         }
     }
 

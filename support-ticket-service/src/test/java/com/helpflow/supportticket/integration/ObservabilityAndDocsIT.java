@@ -3,7 +3,7 @@ package com.helpflow.supportticket.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.helpflow.supportticket.support.AbstractIntegrationTest;
 import java.util.Iterator;
 import java.util.Map;
@@ -64,26 +64,26 @@ class ObservabilityAndDocsIT extends AbstractIntegrationTest {
         assertThat(result.getResponse().getStatus()).isEqualTo(200);
         JsonNode api = json(result);
 
-        assertThat(api.at("/components/securitySchemes/bearerAuth/scheme").asText()).isEqualTo("bearer");
-        assertThat(api.at("/info/description").asText()).contains("Quick start", "Roles");
-        Iterator<Map.Entry<String, JsonNode>> paths = api.get("paths").fields();
+        assertThat(api.at("/components/securitySchemes/bearerAuth/scheme").asString()).isEqualTo("bearer");
+        assertThat(api.at("/info/description").asString()).contains("Quick start", "Roles");
+        Iterator<Map.Entry<String, JsonNode>> paths = api.get("paths").properties().iterator();
         int operations = 0;
         while (paths.hasNext()) {
             var path = paths.next();
-            Iterator<Map.Entry<String, JsonNode>> methods = path.getValue().fields();
+            Iterator<Map.Entry<String, JsonNode>> methods = path.getValue().properties().iterator();
             while (methods.hasNext()) {
                 var method = methods.next();
                 String label = method.getKey().toUpperCase() + " " + path.getKey();
                 JsonNode operation = method.getValue();
-                assertThat(operation.path("summary").asText()).as(label + " summary").isNotBlank();
+                assertThat(operation.path("summary").asString()).as(label + " summary").isNotBlank();
                 assertThat(operation.path("tags")).as(label + " tags").isNotEmpty();
                 assertThat(operation.path("responses").size()).as(label + " responses").isGreaterThanOrEqualTo(2);
                 operations++;
             }
         }
         assertThat(operations).isGreaterThanOrEqualTo(21);
-        assertThat(api.at("/paths/~1tickets/post/description").asText()).contains("Test cases");
-        assertThat(api.at("/paths/~1auth~1login/post/description").asText()).contains("Test cases");
+        assertThat(api.at("/paths/~1tickets/post/description").asString()).contains("Test cases");
+        assertThat(api.at("/paths/~1auth~1login/post/description").asString()).contains("Test cases");
         assertThat(api.at("/paths/~1tickets/post/security/0/bearerAuth").isArray()).isTrue();
         assertThat(api.at("/paths/~1auth~1login/post/security").isMissingNode()).isTrue();
     }
@@ -109,16 +109,16 @@ class ObservabilityAndDocsIT extends AbstractIntegrationTest {
         MvcResult unsupportedLanguage = mockMvc.perform(get("/tickets").header("Accept-Language", "fr")).andReturn();
 
         assertThat(english.getResponse().getStatus()).isEqualTo(404);
-        assertThat(json(english).get("title").asText()).isEqualTo("Ticket not found");
-        assertThat(json(english).get("detail").asText()).isEqualTo("Ticket 999999 does not exist.");
-        assertThat(json(spanish).get("title").asText()).isEqualTo("Ticket no encontrado");
-        assertThat(json(spanish).get("detail").asText()).isEqualTo("El ticket 999999 no existe.");
+        assertThat(json(english).get("title").asString()).isEqualTo("Ticket not found");
+        assertThat(json(english).get("detail").asString()).isEqualTo("Ticket 999999 does not exist.");
+        assertThat(json(spanish).get("title").asString()).isEqualTo("Ticket no encontrado");
+        assertThat(json(spanish).get("detail").asString()).isEqualTo("El ticket 999999 no existe.");
         assertThat(spanishValidation.getResponse().getStatus()).isEqualTo(400);
         JsonNode validation = json(spanishValidation);
-        assertThat(validation.get("title").asText()).isEqualTo("Validación fallida");
-        assertThat(validation.get("errors").findValuesAsText("message")).contains("es obligatorio");
-        assertThat(json(spanishUnauthorized).get("title").asText()).isEqualTo("Autenticación requerida");
+        assertThat(validation.get("title").asString()).isEqualTo("Validación fallida");
+        assertThat(validation.get("errors").findValuesAsString("message")).contains("es obligatorio");
+        assertThat(json(spanishUnauthorized).get("title").asString()).isEqualTo("Autenticación requerida");
         // unsupported languages fall back to English
-        assertThat(json(unsupportedLanguage).get("title").asText()).isEqualTo("Authentication required");
+        assertThat(json(unsupportedLanguage).get("title").asString()).isEqualTo("Authentication required");
     }
 }
