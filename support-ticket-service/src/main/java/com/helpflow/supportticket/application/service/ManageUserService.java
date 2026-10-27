@@ -5,6 +5,8 @@ import com.helpflow.supportticket.application.model.PageResult;
 import com.helpflow.supportticket.application.model.UserSearchCriteria;
 import com.helpflow.supportticket.application.port.in.ManageUserUseCase;
 import com.helpflow.supportticket.application.port.out.UserRepositoryPort;
+import com.helpflow.supportticket.application.port.out.TechnicianRepositoryPort;
+import com.helpflow.supportticket.domain.exception.BusinessRuleViolationException;
 import com.helpflow.supportticket.domain.exception.ForbiddenOperationException;
 import com.helpflow.supportticket.domain.exception.ResourceNotFoundException;
 import com.helpflow.supportticket.domain.model.Actor;
@@ -18,9 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 class ManageUserService implements ManageUserUseCase {
 
     private final UserRepositoryPort users;
+    private final TechnicianRepositoryPort technicians;
 
-    ManageUserService(UserRepositoryPort users) {
+    ManageUserService(UserRepositoryPort users, TechnicianRepositoryPort technicians) {
         this.users = users;
+        this.technicians = technicians;
     }
 
     @Override
@@ -44,8 +48,16 @@ class ManageUserService implements ManageUserUseCase {
     }
 
     @Override
-    public User changeStatus(Long userId, UserStatus status) {
-        return users.save(load(userId).withStatus(status));
+    public User changeStatus(Actor actor, Long userId, UserStatus status) {
+        if (actor.userId().equals(userId) && status == UserStatus.INACTIVO) {
+            throw new BusinessRuleViolationException("cannot-deactivate-self",
+                    "User " + userId + " tried to deactivate their own account");
+        }
+        User updated = users.save(load(userId).withStatus(status));
+        technicians.findByUserId(userId).ifPresent(technician -> technicians.save(technician.withProfile(
+                technician.fullName(), technician.specialty(), technician.site(), technician.maxActiveTickets(),
+                status)));
+        return updated;
     }
 
     private User load(Long userId) {

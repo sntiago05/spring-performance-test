@@ -219,6 +219,10 @@ Self-registration always creates `ROLE_USUARIO`; admins create technicians (`ROL
 | Users, technicians management | own profile | own profile | all |
 | `/actuator/metrics` and health details | no | no | yes |
 
+Account rules: the document is normalized (trimmed, upper-case) so the same person cannot be registered twice by typing it
+differently; an admin cannot deactivate their own account; deactivating a technician's account also disables their support
+profile, so an inactive technician never receives tickets.
+
 Authentication (valid token -> 401 otherwise) is enforced by the security filter chain; the role matrix is in
 `SecurityConfig`; **ownership** (who may see which ticket) is enforced inside the use cases (`403`).
 `/actuator/health`, `/actuator/info`, `/actuator/prometheus`, Swagger and `/auth/*` are public; nothing else of Actuator is exposed.
@@ -335,7 +339,7 @@ inside `@Transactional` use cases.
 * **Integration (Spring Boot Test + MockMvc + Testcontainers PostgreSQL):** registration/login, full lifecycle,
   role and ownership matrix, assignment rules, concurrent registrations, SLA escalation with a controllable clock,
   pagination/filters, N+1 guarantees (Hibernate statistics), Actuator access rules, i18n and OpenAPI completeness.
-* **Postman:** `docs/postman/` has the collection (56 requests with assertions) and a local environment.
+* **Postman:** `docs/postman/` has the collection (57 requests with assertions) and a local environment.
 
 ## Configuration
 

@@ -65,6 +65,11 @@ class ObservabilityAndDocsIT extends AbstractIntegrationTest {
         JsonNode api = json(result);
 
         assertThat(api.at("/components/securitySchemes/bearerAuth/scheme").asString()).isEqualTo("bearer");
+        assertThat(api.at("/components/schemas/ProblemDetail").isMissingNode()).isFalse();
+        assertThat(api.at("/components/schemas/ProblemDetail/properties/title").isMissingNode()).isFalse();
+        assertThat(api.at("/components/schemas/ProblemDetail/properties/status").isMissingNode()).isFalse();
+        assertAllRefsExist(api, api);
+
         assertThat(api.at("/info/description").asString()).contains("Quick start", "Roles");
         Iterator<Map.Entry<String, JsonNode>> paths = api.get("paths").properties().iterator();
         int operations = 0;
@@ -86,6 +91,27 @@ class ObservabilityAndDocsIT extends AbstractIntegrationTest {
         assertThat(api.at("/paths/~1auth~1login/post/description").asString()).contains("Test cases");
         assertThat(api.at("/paths/~1tickets/post/security/0/bearerAuth").isArray()).isTrue();
         assertThat(api.at("/paths/~1auth~1login/post/security").isMissingNode()).isTrue();
+    }
+
+    private void assertAllRefsExist(JsonNode root, JsonNode current) {
+        if (current.isObject()) {
+            if (current.has("$ref")) {
+                String ref = current.get("$ref").asString();
+                if (ref.startsWith("#/")) {
+                    String jsonPointer = ref.substring(1);
+                    assertThat(root.at(jsonPointer).isMissingNode())
+                            .as("Unresolved $ref: " + ref)
+                            .isFalse();
+                }
+            }
+            for (JsonNode child : current) {
+                assertAllRefsExist(root, child);
+            }
+        } else if (current.isArray()) {
+            for (JsonNode child : current) {
+                assertAllRefsExist(root, child);
+            }
+        }
     }
 
     @Test

@@ -5,11 +5,15 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.IntegerSchema;
+import io.swagger.v3.oas.models.media.MapSchema;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.HeaderParameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -59,7 +63,32 @@ class OpenApiConfig {
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT")
-                                .description("Paste the `accessToken` returned by POST /auth/login")));
+                                .description("Paste the `accessToken` returned by POST /auth/login"))
+                        .addSchemas("ProblemDetail", problemDetailSchema()));
+    }
+
+    @Bean
+    OpenApiCustomizer problemDetailOpenApiCustomizer() {
+        return openApi -> {
+            if (openApi.getComponents() == null) {
+                openApi.setComponents(new Components());
+            }
+            openApi.getComponents().addSchemas("ProblemDetail", problemDetailSchema());
+        };
+    }
+
+    private static Schema<?> problemDetailSchema() {
+        return new Schema<>()
+                .type("object")
+                .description("RFC 7807 / RFC 9457 Problem Details")
+                .addProperty("type", new StringSchema().format("uri").example("urn:helpflow:problem:validation-error"))
+                .addProperty("title", new StringSchema().example("Validation failed"))
+                .addProperty("status", new IntegerSchema().format("int32").example(400))
+                .addProperty("detail", new StringSchema().example("The request contains invalid fields."))
+                .addProperty("instance", new StringSchema().format("uri").example("/tickets"))
+                .addProperty("timestamp", new StringSchema().format("date-time").example("2026-01-15T10:15:30Z"))
+                .addProperty("traceId", new StringSchema().example("6f1c2b7e9a4d4c1f8e0b5a3d2c7e9f10"))
+                .addProperty("properties", new MapSchema().additionalProperties(Boolean.TRUE));
     }
 
     /**

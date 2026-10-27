@@ -1,5 +1,7 @@
 package com.helpflow.supportticket.application.service;
 
+import static com.helpflow.supportticket.support.Fixtures.actor;
+import static com.helpflow.supportticket.support.Fixtures.technician;
 import static com.helpflow.supportticket.support.Fixtures.user;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -12,6 +14,7 @@ import com.helpflow.supportticket.application.model.IssuedToken;
 import com.helpflow.supportticket.application.port.in.AuthenticateUserUseCase;
 import com.helpflow.supportticket.application.port.in.RegisterUserUseCase;
 import com.helpflow.supportticket.application.port.out.PasswordHasherPort;
+import com.helpflow.supportticket.application.port.out.TechnicianRepositoryPort;
 import com.helpflow.supportticket.application.port.out.TicketMetricsPort;
 import com.helpflow.supportticket.application.port.out.TokenIssuerPort;
 import com.helpflow.supportticket.application.port.out.UserRepositoryPort;
@@ -19,7 +22,9 @@ import com.helpflow.supportticket.domain.exception.AccountInactiveException;
 import com.helpflow.supportticket.domain.exception.BusinessRuleViolationException;
 import com.helpflow.supportticket.domain.exception.DuplicateResourceException;
 import com.helpflow.supportticket.domain.exception.InvalidCredentialsException;
+import com.helpflow.supportticket.domain.model.Category;
 import com.helpflow.supportticket.domain.model.Role;
+import com.helpflow.supportticket.domain.model.Technician;
 import com.helpflow.supportticket.domain.model.User;
 import com.helpflow.supportticket.domain.model.UserStatus;
 import java.time.Instant;
@@ -38,6 +43,7 @@ class UserUseCasesTest {
     @Mock PasswordHasherPort hasher;
     @Mock TokenIssuerPort tokens;
     @Mock TicketMetricsPort metrics;
+    @Mock TechnicianRepositoryPort technicians;
 
     @Nested
     class Registration {
@@ -69,6 +75,30 @@ class UserUseCasesTest {
                     .isInstanceOf(DuplicateResourceException.class)
                     .extracting("code").isEqualTo("duplicate-email");
             verify(users, never()).save(any());
+        }
+
+        @Test
+        void documentsAreComparedWithoutCaseOrSurroundingSpaces() {
+            var typedDifferently = new RegisterUserUseCase.Command(" ab-12345 ", "Name", "someone@helpflow.example",
+                    "Str0ngPass!", "S", "A");
+            when(users.existsByDocument("AB-12345")).thenReturn(true);
+
+            assertThatThrownBy(() -> new RegisterUserService(users, hasher).register(typedDifferently))
+                    .isInstanceOf(DuplicateResourceException.class)
+                    .extracting("code").isEqualTo("duplicate-document");
+        }
+
+        @Test
+        void storesTheNormalizedDocument() {
+            when(hasher.hash(any())).thenReturn("hash");
+            when(users.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            new RegisterUserService(users, hasher).register(new RegisterUserUseCase.Command(" ab-12345 ", "Name",
+                    "someone@helpflow.example", "Str0ngPass!", "S", "A"));
+
+            ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+            verify(users).save(saved.capture());
+            assertThat(saved.getValue().document()).isEqualTo("AB-12345");
         }
 
         @Test
@@ -136,6 +166,49 @@ class UserUseCasesTest {
 
             assertThatThrownBy(() -> service().login(command)).isInstanceOf(AccountInactiveException.class);
             verify(metrics).authenticationFailed("inactive_account");
+        }
+    }
+
+    @Nested
+    class StatusChange {
+
+        private ManageUserService service() {
+            return new ManageUserService(users, technicians);
+        }
+
+        @Test
+        void anAdminCannotDeactivateTheirOwnAccount() {
+            assertThatThrownBy(() -> service().changeStatus(actor(1, Role.ROLE_ADMIN), 1L, UserStatus.INACTIVO))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("code").isEqualTo("cannot-deactivate-self");
+            verify(users, never()).save(any());
+        }
+
+        @Test
+        void deactivatingATechnicianAccountAlsoDisablesTheSupportProfile() {
+            when(users.findById(9L)).thenReturn(Optional.of(user(9, UserStatus.ACTIVO, Role.ROLE_TECNICO)));
+            when(users.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+            Technician profile = technician(7, Category.RED, "BOGOTA", 3);
+            when(technicians.findByUserId(9L)).thenReturn(Optional.of(profile));
+
+            service().changeStatus(actor(1, Role.ROLE_ADMIN), 9L, UserStatus.INACTIVO);
+
+            ArgumentCaptor<Technician> saved = ArgumentCaptor.forClass(Technician.class);
+            verify(technicians).save(saved.capture());
+            assertThat(saved.getValue().status()).isEqualTo(UserStatus.INACTIVO);
+            assertThat(saved.getValue().code()).isEqualTo(profile.code());
+        }
+
+        @Test
+        void regularUsersHaveNoSupportProfileToUpdate() {
+            when(users.findById(9L)).thenReturn(Optional.of(user(9, UserStatus.ACTIVO, Role.ROLE_USUARIO)));
+            when(users.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(technicians.findByUserId(9L)).thenReturn(Optional.empty());
+
+            var result = service().changeStatus(actor(1, Role.ROLE_ADMIN), 9L, UserStatus.INACTIVO);
+
+            assertThat(result.status()).isEqualTo(UserStatus.INACTIVO);
+            verify(technicians, never()).save(any());
         }
     }
 }

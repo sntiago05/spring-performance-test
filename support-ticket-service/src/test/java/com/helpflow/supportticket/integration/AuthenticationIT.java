@@ -149,4 +149,52 @@ class AuthenticationIT extends AbstractIntegrationTest {
         assertThat(foreign.getResponse().getStatus()).isEqualTo(403);
         assertThat(foreignEdit.getResponse().getStatus()).isEqualTo(403);
     }
+
+    @Test
+    void theSameDocumentTypedWithOtherCaseOrSpacesIsStillADuplicate() throws Exception {
+        String suffix = uniqueSuffix();
+        postJson("/auth/register", null, Map.of("document", "ab-" + suffix, "fullName", "Same Person",
+                "email", "first." + suffix + "@helpflow.example", "password", PASSWORD, "site", "BOGOTA", "area", "X"));
+
+        MvcResult again = postJson("/auth/register", null, Map.of("document", "AB-" + suffix.toUpperCase(),
+                "fullName", "Same Person", "email", "second." + suffix + "@helpflow.example", "password", PASSWORD,
+                "site", "BOGOTA", "area", "X"));
+
+        assertThat(again.getResponse().getStatus()).isEqualTo(409);
+        assertThat(json(again).get("type").asText()).endsWith("duplicate-document");
+        assertThat(jdbc.queryForObject("select document from users where email = ?", String.class,
+                "first." + suffix + "@helpflow.example")).isEqualTo("AB-" + suffix.toUpperCase());
+    }
+
+    @Test
+    void anAdminCannotDeactivateTheirOwnAccount() throws Exception {
+        String admin = adminToken();
+        long adminId = json(getJson("/users/me", admin)).get("id").asLong();
+
+        MvcResult result = patchJson("/users/" + adminId + "/status", admin, Map.of("status", "INACTIVO"));
+
+        assertThat(result.getResponse().getStatus()).isEqualTo(422);
+        assertThat(json(result).get("type").asText()).endsWith("cannot-deactivate-self");
+        assertThat(json(getJson("/users/me", admin)).get("status").asText()).isEqualTo("ACTIVO");
+    }
+
+    @Test
+    void deactivatingATechnicianAccountStopsTicketsFromBeingAssignedToThem() throws Exception {
+        String admin = adminToken();
+        long userId = jdbc.queryForObject("select user_id from technicians where code = 'TEC-007'", Long.class);
+        String user = newUserToken();
+        try {
+            patchJson("/users/" + userId + "/status", admin, Map.of("status", "INACTIVO"));
+
+            JsonNode ticket = createTicket(user, "RED", "MEDIA", "BOGOTA"); // TEC-007 would be the first choice
+
+            assertThat(jdbc.queryForObject("select status from technicians where code = 'TEC-007'", String.class))
+                    .isEqualTo("INACTIVO");
+            assertThat(ticket.get("technician").get("code").asText()).isNotEqualTo("TEC-007");
+        } finally {
+            patchJson("/users/" + userId + "/status", admin, Map.of("status", "ACTIVO"));
+        }
+        assertThat(jdbc.queryForObject("select status from technicians where code = 'TEC-007'", String.class))
+                .isEqualTo("ACTIVO");
+    }
 }

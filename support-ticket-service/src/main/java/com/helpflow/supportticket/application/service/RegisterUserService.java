@@ -6,6 +6,7 @@ import com.helpflow.supportticket.application.port.out.UserRepositoryPort;
 import com.helpflow.supportticket.domain.exception.BusinessRuleViolationException;
 import com.helpflow.supportticket.domain.exception.DuplicateResourceException;
 import com.helpflow.supportticket.domain.model.CorporateEmail;
+import com.helpflow.supportticket.domain.model.PersonalDocument;
 import com.helpflow.supportticket.domain.model.Role;
 import com.helpflow.supportticket.domain.model.User;
 import com.helpflow.supportticket.domain.model.UserStatus;
@@ -48,7 +49,7 @@ class RegisterUserService implements RegisterUserUseCase {
         if (users.existsByEmail(email)) {
             throw new DuplicateResourceException("duplicate-email", "E-mail already registered: " + email, email);
         }
-        String document = command.document().trim();
+        String document = PersonalDocument.normalize(command.document());
         if (users.existsByDocument(document)) {
             throw new DuplicateResourceException("duplicate-document", "Document already registered: " + document,
                     document);

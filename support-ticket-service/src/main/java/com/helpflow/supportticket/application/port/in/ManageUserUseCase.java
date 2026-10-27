@@ -21,7 +21,11 @@ public interface ManageUserUseCase {
      */
     User updateProfile(Actor actor, Long userId, ProfileCommand command);
 
-    User changeStatus(Long userId, UserStatus status);
+    /**
+     * Activates or deactivates an account. Admins cannot deactivate themselves, and the support profile of a
+     * technician follows the status of its account so an inactive technician never receives tickets.
+     */
+    User changeStatus(Actor actor, Long userId, UserStatus status);
 
     record ProfileCommand(String fullName, String site, String area) {
     }

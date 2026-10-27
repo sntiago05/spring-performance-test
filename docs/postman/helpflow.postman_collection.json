@@ -241,28 +241,17 @@
             "auth": {
               "type": "noauth"
             },
-            "description": "Creates an ACTIVO ROLE_USUARIO account. The e-mail is generated on every run."
+            "description": "Registers the fixed person Laura Gomez (document 1020304050) once: the first run returns 201, later runs return 409 and the collection simply logs in. Nothing is duplicated."
           },
           "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const n = Date.now();",
-                  "pm.collectionVariables.set('userEmail', 'laura.' + n + '@helpflow.example');",
-                  "pm.collectionVariables.set('userDocument', 'DOC-' + n);"
-                ]
-              }
-            },
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
-                  "const u = pm.response.json();",
-                  "pm.test('ACTIVO ROLE_USUARIO, no password', function () { pm.expect(u.status).to.eql('ACTIVO'); pm.expect(u.role).to.eql('ROLE_USUARIO'); pm.expect(u).to.not.have.property('password'); });"
+                  "pm.test('201 the first time, 409 afterwards (the person is registered only once)', function () { pm.expect([201, 409]).to.include(pm.response.code); });",
+                  "if (pm.response.code === 201) { const u = pm.response.json(); pm.test('ACTIVO ROLE_USUARIO, no password', function () { pm.expect(u.status).to.eql('ACTIVO'); pm.expect(u.role).to.eql('ROLE_USUARIO'); pm.expect(u).to.not.have.property('password'); }); }",
+                  "if (pm.response.code === 409) { pm.test('already registered', function () { pm.expect(pm.response.json().type).to.include('duplicate'); }); }"
                 ]
               }
             }
@@ -500,7 +489,8 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
-                  "pm.collectionVariables.set('adminToken', pm.response.json().accessToken);"
+                  "pm.collectionVariables.set('adminToken', pm.response.json().accessToken);",
+                  "pm.collectionVariables.set('adminUserId', pm.response.json().user.id);"
                 ]
               }
             }
@@ -1933,7 +1923,63 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"document\": \"TEC-{{$timestamp}}\",\n  \"fullName\": \"Carlos Ruiz\",\n  \"email\": \"carlos.{{$timestamp}}@helpflow.example\",\n  \"password\": \"{{technicianPassword}}\",\n  \"site\": \"BOGOTA\",\n  \"area\": \"IT Support\",\n  \"specialty\": \"RED\",\n  \"maxActiveTickets\": 3\n}",
+              "raw": "{\n  \"document\": \"9988776655\",\n  \"fullName\": \"Carlos Ruiz\",\n  \"email\": \"carlos.ruiz@helpflow.example\",\n  \"password\": \"{{technicianPassword}}\",\n  \"site\": \"BOGOTA\",\n  \"area\": \"IT Support\",\n  \"specialty\": \"RED\",\n  \"maxActiveTickets\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Creates the fixed technician Carlos Ruiz once (201); later runs get 409."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 the first time, 409 afterwards', function () { pm.expect([201, 409]).to.include(pm.response.code); });",
+                  "if (pm.response.code === 201) { pm.test('code generated', function () { pm.expect(pm.response.json().code).to.match(/^TEC-\\d{3}$/); }); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin cannot deactivate themselves (422)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{adminUserId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{adminUserId}}",
+                "status"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"INACTIVO\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1957,8 +2003,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
-                  "pm.test('code generated', function () { pm.expect(pm.response.json().code).to.match(/^TEC-\\d{3}$/); });"
+                  "pm.test('Status is 422', function () { pm.response.to.have.status(422); });",
+                  "pm.test('cannot-deactivate-self', function () { pm.expect(pm.response.json().type).to.include('cannot-deactivate-self'); });"
                 ]
               }
             }
@@ -2052,22 +2098,11 @@
           },
           "event": [
             {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const n = Date.now() + 1;",
-                  "pm.collectionVariables.set('user2Email', 'other.' + n + '@helpflow.example');",
-                  "pm.collectionVariables.set('user2Document', 'DOC-' + n);"
-                ]
-              }
-            },
-            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status is 201', function () { pm.response.to.have.status(201); });"
+                  "pm.test('201 the first time, 409 afterwards', function () { pm.expect([201, 409]).to.include(pm.response.code); });"
                 ]
               }
             }
@@ -2647,6 +2682,22 @@
     {
       "key": "userPassword",
       "value": "Str0ngPass!2026"
+    },
+    {
+      "key": "userEmail",
+      "value": "laura.gomez@helpflow.example"
+    },
+    {
+      "key": "userDocument",
+      "value": "1020304050"
+    },
+    {
+      "key": "user2Email",
+      "value": "other.user@helpflow.example"
+    },
+    {
+      "key": "user2Document",
+      "value": "2030405060"
     },
     {
       "key": "forgedToken",

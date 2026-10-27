@@ -61,7 +61,8 @@ docker compose up -d --build support-ticket-service   # rebuild one service afte
 
 Import `docs/postman/helpflow.postman_collection.json` and `docs/postman/helpflow-local.postman_environment.json`.
 Fill the environment values `adminPassword` and `technicianPassword` from `.env`, then run the collection in order with the
-Collection Runner. Requests generate their own users; tests assert status codes and the main fields.
+Collection Runner. The collection is idempotent: it registers the fixed people (Laura Gomez, Other User, Carlos Ruiz) once and
+reuses them on later runs (409 is accepted), so repeated runs do not create duplicate users; tests assert status codes and the main fields.
 
 ## 6. Automated tests
 

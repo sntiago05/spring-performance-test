@@ -107,10 +107,14 @@ class UserController {
             description = """
                     `INACTIVO` users cannot log in and cannot register tickets (`422` `user-inactive`). Existing \
                     tokens keep working until they expire, but ticket creation re-checks the status in the database.
+
+                    **Rules:** an admin cannot deactivate their own account (`422` `cannot-deactivate-self`); when the user \
+                    is a technician, the support profile follows the account status, so an inactive technician receives no \
+                    new tickets.
                     """)
     @ApiResponse(responseCode = "404", description = "User not found")
     @PatchMapping("/{id}/status")
     UserResponse changeStatus(@PathVariable Long id, @Valid @RequestBody ChangeUserStatusRequest request) {
-        return mapper.toResponse(manageUsers.changeStatus(id, request.status()));
+        return mapper.toResponse(manageUsers.changeStatus(actors.current(), id, request.status()));
     }
 }

@@ -11,7 +11,7 @@ Everything below was captured from the Docker Compose stack (`docker compose up 
   support-ticket-service         unit tests:        99, failures 0
   support-ticket-service         integration (Testcontainers PostgreSQL 16): 59, failures 0
 ./scripts/smoke-test.sh          Result: 31 passed, 0 failed
-Postman collection (56 requests) 86 assertions passed, 0 failed
+Postman collection (57 requests) 87 assertions passed, 0 failed
 ```
 
 ## Architecture diagrams
