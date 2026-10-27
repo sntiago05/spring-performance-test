@@ -8,6 +8,9 @@ spring:
     basename: messages
     encoding: UTF-8
     fallback-to-system-locale: false
+  mvc:
+    problemdetails:
+      enabled: true
 
 dispatch:
   # Technician codes returned by the simulation: TEC-001 .. TEC-<pool size>
