@@ -59,6 +59,15 @@ docker compose up -d db                            # start / lift only the Postg
 7. Log in as admin: `GET /tickets?overdue=true`, `PUT /tickets/{id}/assignment`, `PUT /sla-policies/ALTA`, `POST /tickets/escalations`.
 8. Add `Accept-Language: es` to any failing request to see Spanish messages.
 
+## 4b. Frontend development
+
+```bash
+cd frontend && npm install
+npm start          # http://localhost:4200, /api proxied to localhost:8080 (the backend must be running)
+npm test           # 31 unit tests
+npm run build      # production build
+```
+
 ## 5. Postman
 
 Import `docs/postman/helpflow.postman_collection.json` and `docs/postman/helpflow-local.postman_environment.json`.
@@ -119,6 +128,8 @@ curl -s 'localhost:9090/api/v1/query?query=helpflow_tickets_overdue' | jq .
 | Testcontainers pulls hang | No internet or registry limit | `docker pull postgres:16-alpine` beforehand |
 | Build fails: `release version 21 not supported` | JDK older than 21 | Use JDK 21+ (`JAVA_HOME`) |
 | `docker compose build` fails downloading Maven artifacts | No network inside the builder | Check proxy/DNS, retry; BuildKit caches downloaded artifacts |
+| Web app shows a blank page or `502` | Backend not healthy yet, or the `/api` proxy cannot reach it | `docker compose ps`; the frontend container reaches `support-ticket-service:8080` by name |
+| Material components ignore Tailwind sizes | Material CSS is unlayered and beats `@layer utilities` | Use the important modifier on Material hosts (e.g. `w-64!`), see `frontend/src/tailwind.css` |
 | Spanish text shows `?` characters | Terminal not UTF-8 | `export LANG=C.UTF-8` |
 | 409 `concurrent-modification` | Two requests changed the same ticket at once | Reload the ticket and retry |
 

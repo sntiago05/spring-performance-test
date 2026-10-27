@@ -10,7 +10,7 @@ It is made of **two microservices and a modern web application**:
 |---|---|---|
 | `support-ticket-service` | 8080 | Central service: users, technicians, tickets, assignment, SLA, JWT security, PostgreSQL |
 | `technician-dispatch-service` | 8081 | Lightweight simulated external service: suggests a technician and an estimated time. No database, no security |
-| `frontend` (HelpFlow Web) | 4200 | Angular 19 + Material SPA with reverse proxy to backend, role-based dashboards and ticket management |
+| `frontend` (HelpFlow Web) | 4200 | Angular 22 + Tailwind CSS 4 SPA (Material for form widgets) behind nginx, which proxies `/api` to the backend; role-based dashboards and ticket management |
 
 Around them: **PostgreSQL**, **Prometheus** (metrics scraping) and **Grafana** (dashboard), started with Docker Compose.
 
@@ -433,7 +433,7 @@ Secrets come from the environment (`.env`, never committed). Main variables:
 | Pessimistic lock on technician rows | Guarantees capacity under concurrency; optimistic retries would be the alternative |
 | JWT with Spring's resource server (Nimbus) | No extra JWT library; HS256 with a secret from the environment |
 | Prometheus counter `helpflow.tickets.registered` | `created` is a reserved Prometheus suffix and Micrometer would rename the series |
-| Angular 19 web frontend | Web application in frontend/ with Material Design, role-based navigation and Nginx reverse proxy |
+| Angular + Tailwind frontend behind nginx | Not required by the specification (Swagger is its required client); added as a real consumer of the API. The same-origin `/api` proxy avoids CORS. Angular Material is kept only for form/dialog widgets whose behavior is risky to re-implement |
 
 ## Known limitations
 
