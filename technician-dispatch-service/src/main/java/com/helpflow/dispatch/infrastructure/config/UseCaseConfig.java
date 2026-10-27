@@ -3,6 +3,7 @@ package com.helpflow.dispatch.infrastructure.config;
 import com.helpflow.dispatch.application.port.in.SuggestTechnicianUseCase;
 import com.helpflow.dispatch.application.service.SuggestTechnicianService;
 import com.helpflow.dispatch.domain.service.DeterministicTechnicianSelector;
+import com.helpflow.dispatch.infrastructure.exception.DispatchInfrastructureException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,7 +15,11 @@ class UseCaseConfig {
 
     @Bean
     DeterministicTechnicianSelector deterministicTechnicianSelector(DispatchProperties properties) {
-        return new DeterministicTechnicianSelector(properties.technicianPoolSize());
+        try {
+            return new DeterministicTechnicianSelector(properties.technicianPoolSize());
+        } catch (Exception ex) {
+            throw new DispatchInfrastructureException("Failed to initialize DeterministicTechnicianSelector: " + ex.getMessage(), ex);
+        }
     }
 
     @Bean

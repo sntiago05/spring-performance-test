@@ -1,5 +1,6 @@
 package com.helpflow.dispatch.domain.service;
 
+import com.helpflow.dispatch.domain.exception.DomainRuleViolationException;
 import com.helpflow.dispatch.domain.model.Availability;
 import com.helpflow.dispatch.domain.model.Category;
 import com.helpflow.dispatch.domain.model.Priority;
@@ -20,12 +21,21 @@ public final class DeterministicTechnicianSelector {
 
     public DeterministicTechnicianSelector(int poolSize) {
         if (poolSize < 1) {
-            throw new IllegalArgumentException("Technician pool size must be at least 1");
+            throw new DomainRuleViolationException("Technician pool size must be at least 1");
         }
         this.poolSize = poolSize;
     }
 
     public TechnicianSuggestion select(long ticketId, Category category, Priority priority) {
+        if (ticketId <= 0) {
+            throw new DomainRuleViolationException("ticketId must be positive");
+        }
+        if (category == null) {
+            throw new DomainRuleViolationException("category must not be null");
+        }
+        if (priority == null) {
+            throw new DomainRuleViolationException("prioridad must not be null");
+        }
         long seed = seedOf(ticketId, category, priority);
         int technicianNumber = (int) (seed % poolSize) + 1;
         int estimatedHours = (int) ((seed / poolSize) % (MAX_ESTIMATED_HOURS + 1));

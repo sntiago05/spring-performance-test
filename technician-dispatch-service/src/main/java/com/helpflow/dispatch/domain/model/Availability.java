@@ -1,5 +1,7 @@
 package com.helpflow.dispatch.domain.model;
 
+import com.helpflow.dispatch.domain.exception.DomainRuleViolationException;
+
 /**
  * Availability bucket derived from the estimated attention time.
  */
@@ -11,7 +13,7 @@ public enum Availability {
 
     public static Availability fromEstimatedHours(int hours) {
         if (hours < 0) {
-            throw new IllegalArgumentException("Estimated hours cannot be negative: " + hours);
+            throw new DomainRuleViolationException("Estimated hours cannot be negative: " + hours);
         }
         if (hours <= HIGH_MAX_HOURS) {
             return ALTA;
