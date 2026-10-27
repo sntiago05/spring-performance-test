@@ -356,7 +356,7 @@ Secrets come from the environment (`.env`, never committed). Main variables:
 
 ```
 .
-├── pom.xml                          parent (Spring Boot 3.5, Java 21)
+├── pom.xml                          parent (Spring Boot 4.1, Java 21)
 ├── support-ticket-service/          hexagonal service + Dockerfile + Flyway + tests
 ├── technician-dispatch-service/     lightweight service + Dockerfile + tests
 ├── docker-compose.yml               db, both services, prometheus, grafana
