@@ -15,11 +15,14 @@ class OpenApiConfig {
                 .version("1.0.0")
                 .description("""
                         Simulated external service that suggests an available technician and an estimated \
-                        attention time for a support ticket.
+                        attention time for a support ticket via `/technician-dispatch`.
 
                         The answer is **deterministic**: the same `ticketId` + `categoria` + `prioridad` always \
                         returns the same technician and estimate. It is stateless, uses no database and no \
                         authentication; it is meant to be reachable only from `support-ticket-service`.
+
+                        All error responses conform to RFC 9457/7807 (`application/problem+json`) with standard fields: \
+                        `type`, `title`, `status`, `detail`, `instance`, `timestamp`, and `traceId`.
 
                         Error messages are localized: send `Accept-Language: es` for Spanish (default: English).
                         """));

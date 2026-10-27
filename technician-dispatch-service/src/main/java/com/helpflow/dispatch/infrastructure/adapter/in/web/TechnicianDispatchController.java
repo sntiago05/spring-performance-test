@@ -1,6 +1,7 @@
 package com.helpflow.dispatch.infrastructure.adapter.in.web;
 
 import com.helpflow.dispatch.application.port.in.SuggestTechnicianUseCase;
+import com.helpflow.dispatch.domain.model.TechnicianSuggestion;
 import com.helpflow.dispatch.infrastructure.adapter.in.web.dto.DispatchRequest;
 import com.helpflow.dispatch.infrastructure.adapter.in.web.dto.DispatchResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@Tag(name = "Technician dispatch", description = "Simulated technician availability lookup")
+@Tag(name = "Technician Suggestions", description = "Simulated technician availability lookup")
 class TechnicianDispatchController {
 
     private final SuggestTechnicianUseCase suggestTechnician;
@@ -27,39 +28,57 @@ class TechnicianDispatchController {
     }
 
     @Operation(
-            summary = "Suggest a technician for a ticket",
-            description = """
-                    Returns the technician that would attend the ticket and the estimated time in hours.
+        summary = "Suggest a technician for a ticket",
+        description = """
+            Returns the technician that would attend the ticket and the estimated time in hours.
 
-                    **How it works:** `ticketId|categoria|prioridad` is folded into a numeric seed (CRC32); the seed \
-                    selects the technician (`TEC-001` .. `TEC-<pool size>`) and an estimate between 0 and 12 hours.
+            **How it works:** `ticketId|categoria|prioridad` is folded into a numeric seed (CRC32); the seed \
+            selects the technician (`TEC-001` .. `TEC-<pool size>`) and an estimate between 0 and 12 hours.
 
-                    **Availability buckets:** 0-2 h → `ALTA`, 3-8 h → `MEDIA`, more than 8 h → `BAJA`.
+            **Availability buckets:** 0-2 h → `ALTA`, 3-8 h → `MEDIA`, more than 8 h → `BAJA`.
 
-                    **Test cases**
-                    1. Same body twice → identical responses (deterministic).
-                    2. Change only `prioridad` → may return a different technician/estimate.
-                    3. Missing or unknown `categoria`/`prioridad`, or `ticketId <= 0` → `400` ProblemDetail.
-                    """)
-    @ApiResponse(responseCode = "200", description = "Suggestion computed",
-            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                    schema = @Schema(implementation = DispatchResponse.class),
-                    examples = @ExampleObject(value = """
-                            {"ticketId": 125, "tecnicoId": "TEC-014", "disponibilidad": "MEDIA", "tiempoEstimadoHoras": 4}""")))
-    @ApiResponse(responseCode = "400", description = "Invalid request body",
-            content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
-                    schema = @Schema(implementation = ProblemDetail.class),
-                    examples = @ExampleObject(value = """
-                            {"type": "urn:helpflow:problem:validation-error", "title": "Validation failed", "status": 400,
-                             "detail": "The request contains invalid fields.", "instance": "/technician-dispatch",
-                             "timestamp": "2026-01-15T10:15:30Z", "traceId": "6f1c2b7e9a4d4c1f8e0b5a3d2c7e9f10",
-                             "errors": [{"field": "ticketId", "message": "ticketId must be a positive number"}]}""")))
+            **Test cases**
+            1. Same body twice → identical responses (deterministic).
+            2. Change only `prioridad` → may return a different technician/estimate.
+            3. Missing or unknown `categoria`/`prioridad`, or `ticketId <= 0` → `400` ProblemDetail.
+            """)
+    @ApiResponse(responseCode = "200", description = "Suggestion computed successfully",
+        content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+            schema = @Schema(implementation = DispatchResponse.class),
+            examples = @ExampleObject(value = """
+                {"ticketId": 125, "tecnicoId": "TEC-014", "disponibilidad": "MEDIA", "tiempoEstimadoHoras": 4}""")))
+    @ApiResponse(responseCode = "400", description = "Invalid request body or validation failed",
+        content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+            schema = @Schema(implementation = ProblemDetail.class),
+            examples = @ExampleObject(value = """
+                {"type": "urn:helpflow:problem:validation-error", "title": "Validation failed", "status": 400,
+                 "detail": "The request contains invalid fields.", "instance": "/technician-dispatch",
+                 "timestamp": "2026-01-15T10:15:30Z", "traceId": "6f1c2b7e9a4d4c1f8e0b5a3d2c7e9f10",
+                 "errors": [{"field": "ticketId", "message": "ticketId must be a positive number"}]}""")))
+    @ApiResponse(responseCode = "404", description = "Resource or endpoint not found",
+        content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+            schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "405", description = "HTTP method not allowed for this endpoint",
+        content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+            schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "406", description = "Requested representation not acceptable",
+        content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+            schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "415", description = "Unsupported payload media type",
+        content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+            schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "422", description = "Domain rule violation or unprocessable entity",
+        content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+            schema = @Schema(implementation = ProblemDetail.class)))
+    @ApiResponse(responseCode = "500", description = "Unexpected internal server error",
+        content = @Content(mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,
+            schema = @Schema(implementation = ProblemDetail.class)))
     @PostMapping(path = "/technician-dispatch",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    DispatchResponse dispatch(@Valid @RequestBody DispatchRequest request) {
-        var suggestion = suggestTechnician.suggest(new SuggestTechnicianUseCase.Command(
-                request.ticketId(), request.categoria(), request.prioridad()));
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE)
+    DispatchResponse suggest(@Valid @RequestBody DispatchRequest request) {
+        TechnicianSuggestion suggestion = suggestTechnician.suggest(new SuggestTechnicianUseCase.Command(
+            request.ticketId(), request.categoria(), request.prioridad()));
         return DispatchResponse.from(suggestion);
     }
 }
