@@ -193,7 +193,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase(helpflow_tickets_escalated_total[24h]))",
+          "expr": "round(sum(increase(helpflow_tickets_escalated_total[24h])))",
           "legendFormat": "escalated",
           "refId": "A"
         }
@@ -255,7 +255,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(increase(helpflow_tickets_sla_breached_total[24h]))",
+          "expr": "round(sum(increase(helpflow_tickets_sla_breached_total[24h])))",
           "legendFormat": "breached",
           "refId": "A"
         }
