@@ -16,7 +16,7 @@ sequenceDiagram
   UseCase->>DB: begin transaction
   UseCase->>SLA: read priority policy
   SLA-->>UseCase: resolution hours
-  UseCase->>UseCase: calculate deadline; create ABIERTO ticket
+  UseCase->>UseCase: calculate deadline and create ABIERTO ticket
   UseCase->>Dispatch: POST /technician-dispatch (ticketId, categoria, prioridad)
   alt Dispatch responds
     Dispatch-->>UseCase: technician suggestion and estimate
@@ -27,7 +27,7 @@ sequenceDiagram
   UseCase->>Rules: check active status, specialty, capacity, site and SLA fit
   Rules-->>UseCase: eligible choice or no candidate
   alt Candidate selected
-    UseCase->>DB: lock technician; persist assignment, status and history
+    UseCase->>DB: lock technician, then persist assignment, status and history
   else No candidate
     UseCase->>DB: persist open ticket and ASSIGNMENT_PENDING history
   end
