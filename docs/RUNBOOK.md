@@ -20,8 +20,7 @@ docker compose up -d --build           # builds and starts frontend, backend ser
 docker compose ps                      # wait until db, both services and frontend show (healthy)
 ```
 
-Startup order is enforced with health checks: `db` -> `technician-dispatch-service` -> `support-ticket-service` -> `frontend` -> `prometheus` -> `grafana`.
-`depends_on` only orders start-up; the ticket service additionally tolerates the dispatch service being down.
+Compose health dependencies require `db` and `technician-dispatch-service` to be healthy before starting `support-ticket-service`; `frontend` waits for the ticket service health check. Prometheus starts after both backend containers, and Grafana starts after Prometheus. The ticket service falls back to internal assignment rules when a dispatch request fails or times out after the service is running.
 
 Credentials (from `.env`): admin `admin@helpflow.example` + `BOOTSTRAP_ADMIN_PASSWORD`; technicians
 `tec-001@helpflow.example` ... `tec-015@helpflow.example` + `BOOTSTRAP_TECHNICIAN_PASSWORD`; Grafana `admin` + `GRAFANA_ADMIN_PASSWORD`.
@@ -38,7 +37,7 @@ docker compose up -d db                            # start / lift only the Postg
 ## 3. Verify it works (in this order)
 
 1. **Health:** `curl -s localhost:8080/actuator/health` and `curl -s localhost:8081/actuator/health` -> `{"status":"UP"}`.
-2. **End-to-end check:** run the Postman collection (section 5) -> every assertion passes.
+2. **End-to-end check:** import and run the Postman collection (section 5). The captured 57-request/88-assertion run in `docs/EVIDENCE.md` used a local Node runner, not Newman or the Postman app.
 3. **Web Frontend:** open http://localhost:4200 to access the HelpFlow web application.
 4. **Swagger:** open http://localhost:8080/swagger-ui.html and follow section 4.
 5. **SLA walkthrough:** register a ticket (Swagger or the web app), then move it back in time and run the review:

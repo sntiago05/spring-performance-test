@@ -115,3 +115,9 @@ ASSIGNED  SYSTEM  Assigned to TEC-022 (RULES). Dispatch suggestion TEC-007 rejec
 
 After `docker compose down` (without `-v`) and `docker compose up -d`: the ticket count was unchanged (9), Prometheus still
 returned its earlier samples and Grafana kept the provisioned dashboard (volumes `helpflow_pgdata`, `helpflow_prometheus-data`, `helpflow_grafana-data`).
+
+## Documentation diagrams and evidence scope
+
+The repository now includes Mermaid diagrams for [use cases](diagramas/use-cases.md), [the database ER model](diagramas/der.md), [hexagonal architecture](diagramas/hexagonal-architecture.md), [service relationships](diagramas/microservices-architecture.md), [ticket lifecycle](diagramas/ticket-lifecycle.md), [ticket creation/assignment](diagramas/ticket-creation-sequence.md), and [error handling](diagramas/error-handling-sequence.md).
+
+The counts above are the recorded run: 57 collection requests and 88 assertions. The collection was exercised with a local Node runner, not the Postman application or Newman. Existing screenshots cover the web interface and Grafana; this file supplies captured text evidence for tests, overdue tickets and structured logs. The repository does not contain screenshots of test execution, Swagger UI, or a dedicated overdue-ticket/log viewer, so those screenshot-specific items remain pending if required by the evaluator.
