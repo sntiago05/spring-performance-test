@@ -33,7 +33,7 @@ class TechnicianDispatchController {
             Returns the technician that would attend the ticket and the estimated time in hours.
 
             **How it works:** `ticketId|categoria|prioridad` is folded into a numeric seed (CRC32); the seed \
-            selects the technician (`TEC-001` .. `TEC-<pool size>`) and an estimate between 0 and 12 hours.
+            picks one of the pool technicians **that can handle the category** (own specialty or generalist `OTRO`) and an estimate between 0 and 12 hours.
 
             **Availability buckets:** 0-2 h → `ALTA`, 3-8 h → `MEDIA`, more than 8 h → `BAJA`.
 
@@ -41,6 +41,8 @@ class TechnicianDispatchController {
             1. Same body twice → identical responses (deterministic).
             2. Change only `prioridad` → may return a different technician/estimate.
             3. Missing or unknown `categoria`/`prioridad`, or `ticketId <= 0` → `400` ProblemDetail.
+            4. The returned `tecnicoId` always belongs to a technician that can handle `categoria` \
+            (for `RED`: TEC-007..009 or the generalists TEC-013..015; for `OTRO`: anybody).
             """)
     @ApiResponse(responseCode = "200", description = "Suggestion computed successfully",
         content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,

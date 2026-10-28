@@ -329,4 +329,25 @@ class TechnicianDispatchControllerTest {
                 .andExpect(jsonPath("$.paths['/technician-dispatch'].post.responses['" + code
                         + "'].content['application/problem+json'].example.type").isNotEmpty());
     }
+
+    @Test
+    void theConfiguredPoolOnlySuggestsTechniciansThatCanHandleTheCategory() throws Exception {
+        java.util.Map<String, java.util.Set<String>> allowed = java.util.Map.of(
+                "HARDWARE", java.util.Set.of("TEC-001", "TEC-002", "TEC-003", "TEC-013", "TEC-014", "TEC-015"),
+                "SOFTWARE", java.util.Set.of("TEC-004", "TEC-005", "TEC-006", "TEC-013", "TEC-014", "TEC-015"),
+                "RED", java.util.Set.of("TEC-007", "TEC-008", "TEC-009", "TEC-013", "TEC-014", "TEC-015"),
+                "ACCESOS", java.util.Set.of("TEC-010", "TEC-011", "TEC-012", "TEC-013", "TEC-014", "TEC-015"));
+
+        for (var entry : allowed.entrySet()) {
+            for (int ticketId = 1; ticketId <= 40; ticketId++) {
+                String body = """
+                        {"ticketId": %d, "categoria": "%s", "prioridad": "ALTA"}""".formatted(ticketId, entry.getKey());
+                String technician = com.jayway.jsonpath.JsonPath.read(
+                        dispatch(body, "en").andReturn().getResponse().getContentAsString(), "$.tecnicoId");
+
+                org.assertj.core.api.Assertions.assertThat(technician)
+                        .as("%s ticket %d", entry.getKey(), ticketId).isIn(entry.getValue());
+            }
+        }
+    }
 }

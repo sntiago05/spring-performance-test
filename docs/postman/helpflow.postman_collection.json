@@ -41,7 +41,7 @@
             "auth": {
               "type": "noauth"
             },
-            "description": "Deterministic: the same ticketId + categoria + prioridad always returns the same technician and estimate."
+            "description": "Deterministic: the same ticketId + categoria + prioridad always returns the same technician and estimate, and the technician can handle the categoria."
           },
           "event": [
             {
@@ -53,6 +53,7 @@
                   "const b = pm.response.json();",
                   "pm.test('Has the specified fields', function () { pm.expect(b).to.have.keys('ticketId','tecnicoId','disponibilidad','tiempoEstimadoHoras'); });",
                   "pm.test('tecnicoId looks like TEC-nnn', function () { pm.expect(b.tecnicoId).to.match(/^TEC-\\d{3}$/); });",
+                  "pm.test('RED ticket gets a RED specialist (007-009) or a generalist (013-015)', function () { pm.expect(['TEC-007','TEC-008','TEC-009','TEC-013','TEC-014','TEC-015']).to.include(b.tecnicoId); });",
                   "pm.test('Availability matches the estimate', function () { const h = b.tiempoEstimadoHoras; const e = h <= 2 ? 'ALTA' : (h <= 8 ? 'MEDIA' : 'BAJA'); pm.expect(b.disponibilidad).to.eql(e); });",
                   "pm.collectionVariables.set('firstDispatch', JSON.stringify(b));"
                 ]

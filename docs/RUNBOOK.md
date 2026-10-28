@@ -51,6 +51,38 @@ docker compose up -d db                            # start / lift only the Postg
 7. **Grafana:** http://localhost:3000 -> Dashboards -> HelpFlow -> *HelpFlow - Services Overview*.
 8. **Automated tests:** `./mvnw clean verify` (see section 6).
 
+## 3b. Verify the dispatch suggestions are compatible
+
+The dispatch service must only suggest technicians able to handle the ticket category (own specialty or generalist `OTRO`, `TEC-013..015`).
+
+```bash
+# 1. The specification example (deterministic): expect TEC-008 / 2 h / ALTA, every time
+curl -s -X POST localhost:8081/technician-dispatch -H 'Content-Type: application/json' \
+  -d '{"ticketId":125,"categoria":"RED","prioridad":"ALTA"}'
+
+# 2. Which technicians does each category get over 60 tickets?
+for cat in HARDWARE SOFTWARE RED ACCESOS; do
+  echo -n "$cat: "
+  for id in $(seq 1 60); do
+    curl -s -X POST localhost:8081/technician-dispatch -H 'Content-Type: application/json' \
+      -d "{\"ticketId\":$id,\"categoria\":\"$cat\",\"prioridad\":\"MEDIA\"}" | grep -o 'TEC-[0-9]*'
+  done | sort -u | tr '\n' ' '; echo
+done
+```
+
+Expected output of step 2 (exactly these six per category, nothing else):
+
+```
+HARDWARE: TEC-001 TEC-002 TEC-003 TEC-013 TEC-014 TEC-015
+SOFTWARE: TEC-004 TEC-005 TEC-006 TEC-013 TEC-014 TEC-015
+RED: TEC-007 TEC-008 TEC-009 TEC-013 TEC-014 TEC-015
+ACCESOS: TEC-010 TEC-011 TEC-012 TEC-013 TEC-014 TEC-015
+```
+
+Then check the integration end to end: log in (Swagger or the web app), create a `RED` ticket with priority `MEDIA`, and open `GET /tickets/{id}/assignments`:
+`source` should be `DISPATCH` and `estimatedHours` filled (with `MEDIA` every estimate fits the 24 h SLA). With `ALTA` or `CRITICA`, an estimate longer than the time left
+is legitimately discarded and the history says "Dispatch suggestion TEC-xxx rejected by assignment rules".
+
 ## 4. Manual test with Swagger UI
 
 1. `POST /auth/register` (any corporate e-mail such as `ana.perez@helpflow.example`, password >= 8 chars), then `POST /auth/login`.

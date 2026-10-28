@@ -197,7 +197,8 @@ is recorded in `ticket_history`. `ASIGNADO` is reached only by assigning a techn
 ### Automatic assignment
 
 1. The SLA deadline is calculated: `slaDueAt = createdAt + resolutionHours(priority)` (calendar hours).
-2. `technician-dispatch-service` returns a suggested technician and an estimate (0-2 h `ALTA`, 3-8 h `MEDIA`, >8 h `BAJA`).
+2. `technician-dispatch-service` returns a suggested technician **among those able to handle the category** (own specialty, or a generalist `OTRO`) and an
+   estimate (0-2 h `ALTA`, 3-8 h `MEDIA`, >8 h `BAJA`).
 3. A technician is **eligible** if they are `ACTIVO`, their specialty matches the category (or they are a generalist `OTRO`;
    category `OTRO` accepts anyone) and they have capacity: `maxActiveTickets` tickets in `ASIGNADO`/`EN_PROGRESO`
    (`CRITICA` tickets may use one extra slot).
@@ -395,7 +396,6 @@ Secrets come from the environment (`.env`, never committed). Main variables:
 | `DISPATCH_BASE_URL`, `DISPATCH_CONNECT_TIMEOUT`, `DISPATCH_READ_TIMEOUT` | ticket service | Dispatch client |
 | `SLA_REVIEW_INTERVAL` | ticket service | Scheduler period (default `PT1M`) |
 | `BOOTSTRAP_ADMIN_EMAIL/PASSWORD`, `BOOTSTRAP_TECHNICIAN_PASSWORD` | ticket service | Optional first-run accounts |
-| `DISPATCH_TECHNICIAN_POOL_SIZE` | dispatch service | Codes `TEC-001..TEC-n` (default 15, matches the seed) |
 | `LOG_FORMAT` | both | `ecs` (default) or empty for plain text |
 
 ## Project layout and design decisions
@@ -427,6 +427,8 @@ Secrets come from the environment (`.env`, never committed). Main variables:
 
 ## Known limitations
 
+* The simulated technician pool of the dispatch service (`dispatch.technicians` in its `application.yml`) lists the 15 seeded technicians. A technician
+  created later through the API is unknown to it: it is never suggested by dispatch and is only chosen by the assignment rules.
 * The SLA scheduler is designed for a single instance (several replicas would need a distributed lock).
 * Tokens are not revocable: deactivating a user blocks login and ticket creation immediately, but an already issued
   token stays valid until it expires (default 1 h).

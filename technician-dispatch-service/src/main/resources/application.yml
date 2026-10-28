@@ -13,8 +13,25 @@ spring:
       enabled: true
 
 dispatch:
-  # Technician codes returned by the simulation: TEC-001 .. TEC-<pool size>
-  technician-pool-size: ${DISPATCH_TECHNICIAN_POOL_SIZE:15}
+  # Simulated technician pool. The suggestion is picked among the technicians able to handle the ticket category
+  # (own specialty, or OTRO = generalist; tickets of category OTRO accept anybody). The codes match the technicians
+  # seeded in support-ticket-service (TEC-001..TEC-015); a technician created later there is simply unknown here.
+  technicians:
+    - {code: TEC-001, specialty: HARDWARE}
+    - {code: TEC-002, specialty: HARDWARE}
+    - {code: TEC-003, specialty: HARDWARE}
+    - {code: TEC-004, specialty: SOFTWARE}
+    - {code: TEC-005, specialty: SOFTWARE}
+    - {code: TEC-006, specialty: SOFTWARE}
+    - {code: TEC-007, specialty: RED}
+    - {code: TEC-008, specialty: RED}
+    - {code: TEC-009, specialty: RED}
+    - {code: TEC-010, specialty: ACCESOS}
+    - {code: TEC-011, specialty: ACCESOS}
+    - {code: TEC-012, specialty: ACCESOS}
+    - {code: TEC-013, specialty: OTRO}
+    - {code: TEC-014, specialty: OTRO}
+    - {code: TEC-015, specialty: OTRO}
 
 management:
   endpoints:
