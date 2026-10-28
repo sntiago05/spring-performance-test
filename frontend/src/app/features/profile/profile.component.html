@@ -17,17 +17,17 @@
 
         <div class="flex flex-col gap-4">
           <div class="flex flex-col gap-1 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">User ID</span>
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ i18n.t().ui.userId }}</span>
             <span class="font-mono text-sm font-medium text-slate-900 dark:text-slate-100">#{{ u.id }}</span>
           </div>
 
           <div class="flex flex-col gap-1 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Document ID</span>
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ i18n.t().ui.documentId }}</span>
             <span class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ u.document }}</span>
           </div>
 
           <div class="flex flex-col gap-1 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Corporate Email</span>
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ i18n.t().ui.corporateEmail }}</span>
             <span class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ u.email }}</span>
           </div>
 
@@ -55,7 +55,7 @@
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-3.5" novalidate>
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Full Name</mat-label>
+            <mat-label>{{ i18n.t().ui.fullName }}</mat-label>
             <input matInput formControlName="fullName" maxlength="120">
             @if (form.get('fullName')?.hasError('required')) {
               <mat-error>{{ i18n.t().validation.required }}</mat-error>
@@ -63,7 +63,7 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Site</mat-label>
+            <mat-label>{{ i18n.t().ui.site }}</mat-label>
             <input matInput formControlName="site" maxlength="60">
             @if (form.get('site')?.hasError('required')) {
               <mat-error>{{ i18n.t().validation.required }}</mat-error>
@@ -71,7 +71,7 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Area / Department</mat-label>
+            <mat-label>{{ i18n.t().ui.areaDepartment }}</mat-label>
             <input matInput formControlName="area" maxlength="60">
             @if (form.get('area')?.hasError('required')) {
               <mat-error>{{ i18n.t().validation.required }}</mat-error>

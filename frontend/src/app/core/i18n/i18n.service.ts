@@ -1,4 +1,4 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, effect, signal } from '@angular/core';
 import { SupportedLanguage, TranslationDictionary } from './i18n.models';
 import { TRANSLATIONS_EN } from './translations.en';
 import { TRANSLATIONS_ES } from './translations.es';
@@ -15,6 +15,12 @@ export class I18nService {
 
   readonly currentLang = signal<SupportedLanguage>(this.getInitialLanguage());
   readonly t = computed<TranslationDictionary>(() => this.dictionaries[this.currentLang()]);
+
+  constructor() {
+    effect(() => {
+      document.documentElement.lang = this.currentLang();
+    });
+  }
 
   private getInitialLanguage(): SupportedLanguage {
     try {

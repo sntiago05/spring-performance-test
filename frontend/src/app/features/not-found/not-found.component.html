@@ -1,11 +1,11 @@
 <div class="min-h-[80vh] flex items-center justify-center p-6 sm:p-8">
   <div class="w-full max-w-md p-8 sm:p-12 text-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg">
     <div class="text-6xl sm:text-7xl font-extrabold text-sky-700 dark:text-sky-400 leading-none mb-4 tracking-tight">404</div>
-    <h1 class="m-0 mb-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Page Not Found</h1>
-    <p class="m-0 mb-6 text-sm text-slate-500 dark:text-slate-400">The resource or page you requested does not exist or has been moved.</p>
+    <h1 class="m-0 mb-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ i18n.t().ui.notFoundTitle }}</h1>
+    <p class="m-0 mb-6 text-sm text-slate-500 dark:text-slate-400">{{ i18n.t().ui.notFoundMessage }}</p>
     <a mat-flat-button color="primary" routerLink="/dashboard" class="h-11 px-6 font-semibold rounded-lg">
       <mat-icon>home</mat-icon>
-      <span>Return to Dashboard</span>
+      <span>{{ i18n.t().ui.backToDashboard }}</span>
     </a>
   </div>
 </div>

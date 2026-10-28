@@ -99,7 +99,7 @@
             <mat-error>{{ i18n.t().validation.required }}</mat-error>
           }
           @if (registerForm.get('password')?.hasError('minlength')) {
-            <mat-error>{{ i18n.t().validation.minLength }} (min. 8)</mat-error>
+            <mat-error>{{ i18n.t().validation.minLength }} ({{ i18n.t().ui.minAbbr }} 8)</mat-error>
           }
           @if (registerForm.get('password')?.hasError('serverError')) {
             <mat-error>{{ registerForm.get('password')?.getError('serverError') }}</mat-error>

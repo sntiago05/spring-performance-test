@@ -4,8 +4,16 @@ import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { catchError, throwError } from 'rxjs';
 import { ProblemDetail } from '../models/problem-detail.models';
+import { I18nService } from '../i18n/i18n.service';
 
-export function normalizeProblemDetail(errorResponse: HttpErrorResponse): ProblemDetail {
+export interface FallbackTexts {
+  httpError: string;
+  unexpectedError: string;
+}
+
+const DEFAULT_TEXTS: FallbackTexts = { httpError: 'HTTP Error', unexpectedError: 'Unexpected network or server error' };
+
+export function normalizeProblemDetail(errorResponse: HttpErrorResponse, texts: FallbackTexts = DEFAULT_TEXTS): ProblemDetail {
   const body = errorResponse.error;
   const traceIdHeader = errorResponse.headers?.get('X-Trace-Id') ?? undefined;
 
@@ -24,9 +32,9 @@ export function normalizeProblemDetail(errorResponse: HttpErrorResponse): Proble
 
   return {
     type: 'urn:helpflow:problem:http-error',
-    title: errorResponse.statusText || 'HTTP Error',
+    title: errorResponse.statusText || texts.httpError,
     status: errorResponse.status || 500,
-    detail: (typeof body === 'string' ? body : errorResponse.message) || 'Unexpected network or server error',
+    detail: (typeof body === 'string' ? body : errorResponse.message) || texts.unexpectedError,
     instance: errorResponse.url || undefined,
     timestamp: new Date().toISOString(),
     traceId: traceIdHeader
@@ -34,13 +42,14 @@ export function normalizeProblemDetail(errorResponse: HttpErrorResponse): Proble
 }
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
+  const i18n = inject(I18nService);
   const router = inject(Router);
   const snackBar = inject(MatSnackBar);
 
   return next(req).pipe(
     catchError((error: unknown) => {
       if (error instanceof HttpErrorResponse) {
-        const problem = normalizeProblemDetail(error);
+        const problem = normalizeProblemDetail(error, { httpError: i18n.t().ui.httpError, unexpectedError: i18n.t().ui.unexpectedError });
 
         // 401 Unauthorized: redirect to login preserving intended URL
         if (problem.status === 401 && !req.url.includes('/auth/login')) {

@@ -7,26 +7,26 @@
 
   <form [formGroup]="form" class="flex flex-col gap-4 mt-2" (ngSubmit)="onSubmit()" novalidate>
     <mat-form-field appearance="outline" class="w-full">
-      <mat-label>{{ i18n.t().sla.resolutionHoursCol }} (hours: 1 - 720)</mat-label>
+      <mat-label>{{ i18n.t().sla.resolutionHoursCol }} {{ i18n.t().ui.hoursRangeLabel }}</mat-label>
       <input matInput type="number" formControlName="resolutionHours" min="1" max="720">
-      <mat-hint>Calendar hours until SLA breach deadline</mat-hint>
+      <mat-hint>{{ i18n.t().ui.resolutionHoursHint }}</mat-hint>
       @if (form.get('resolutionHours')?.hasError('required')) {
         <mat-error>{{ i18n.t().validation.required }}</mat-error>
       }
       @if (form.get('resolutionHours')?.hasError('min') || form.get('resolutionHours')?.hasError('max')) {
-        <mat-error>Must be between 1 and 720 hours (up to 30 days)</mat-error>
+        <mat-error>{{ i18n.t().ui.resolutionHoursRange }}</mat-error>
       }
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>{{ i18n.t().sla.thresholdCol }} (%: 1 - 99)</mat-label>
       <input matInput type="number" formControlName="escalationThresholdPercent" min="1" max="99">
-      <mat-hint>Share of resolution window when priority automatically rises</mat-hint>
+      <mat-hint>{{ i18n.t().ui.thresholdHint }}</mat-hint>
       @if (form.get('escalationThresholdPercent')?.hasError('required')) {
         <mat-error>{{ i18n.t().validation.required }}</mat-error>
       }
       @if (form.get('escalationThresholdPercent')?.hasError('min') || form.get('escalationThresholdPercent')?.hasError('max')) {
-        <mat-error>Must be between 1% and 99%</mat-error>
+        <mat-error>{{ i18n.t().ui.thresholdRange }}</mat-error>
       }
     </mat-form-field>
   </form>

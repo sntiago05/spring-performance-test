@@ -24,14 +24,14 @@
         matInput
         rows="4"
         formControlName="observations"
-        placeholder="Enter required context or progress notes..."
+        [placeholder]="i18n.t().ui.observationsPlaceholder"
         maxlength="1000">
       </textarea>
       <mat-hint>
         @if (form.get('status')?.value === 'CANCELADO') {
           <span class="text-red-600 dark:text-red-400 font-semibold">{{ i18n.t().tickets.observationsHint }}</span>
         } @else {
-          <span>Required observations (max 1000 chars)</span>
+          <span>{{ i18n.t().ui.requiredObservations }}</span>
         }
       </mat-hint>
       @if (form.get('observations')?.hasError('required')) {

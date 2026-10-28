@@ -61,14 +61,14 @@
           @if (overdueCount() > 0) {
             <span class="text-red-600 dark:text-red-400 font-semibold">{{ i18n.t().tickets.overdueWarning }}</span>
           } @else {
-            <span class="text-emerald-600 dark:text-emerald-400 font-medium">All SLAs on schedule</span>
+            <span class="text-emerald-600 dark:text-emerald-400 font-medium">{{ i18n.t().ui.allSlasOnSchedule }}</span>
           }
         </div>
       </div>
     </section>
 
     <!-- Status Breakdown Grid -->
-    <h2 class="m-0 text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ i18n.t().app.status }} Breakdown</h2>
+    <h2 class="m-0 text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ i18n.t().ui.statusBreakdown }}</h2>
     <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
       @for (st of statusesList; track st) {
         <div

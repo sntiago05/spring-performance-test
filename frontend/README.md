@@ -114,6 +114,8 @@ The application provides a zero-external-dependency, typed runtime international
 * **Switchable:** Seamless toggle directly from the top toolbar at any time.
 * **Backend Localization:** The `authInterceptor` passes the active language in the standard `Accept-Language` header with every HTTP request. All RFC 7807 problem details returned by the Spring backend arrive translated in the active language.
 * **Localized Dates:** `LocalizedDatePipe` and `I18nService.formatDate()` format calendar dates and timestamps according to the active locale (`en-US` or `es-CO`).
+* **Complete coverage:** every label, placeholder, `aria-label`, dialog and the Material paginator come from the dictionary, and `<html lang>` follows the active language. User-entered data (ticket title, description, observations) is shown as typed.
+* **System audit notes:** the backend stores the notes it generates (ticket registration, automatic assignment, SLA review) in English; `HistoryNotePipe` renders those fixed patterns in the active language and leaves any other text unchanged.
 
 ---
 

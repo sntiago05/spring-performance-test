@@ -7,6 +7,8 @@ import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { API_BASE_URL } from './core/config/api.config';
 import { environment } from '../environments/environment';
+import { MatPaginatorIntl } from '@angular/material/paginator';
+import { TranslatedPaginatorIntl } from './core/i18n/translated-paginator-intl';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -16,6 +18,7 @@ export const appConfig: ApplicationConfig = {
       withInterceptors([authInterceptor, errorInterceptor])
     ),
     provideAnimationsAsync(),
+    { provide: MatPaginatorIntl, useClass: TranslatedPaginatorIntl },
     {
       provide: API_BASE_URL,
       useValue: environment.apiBaseUrl

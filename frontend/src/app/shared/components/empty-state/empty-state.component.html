@@ -2,7 +2,7 @@
   <div class="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300">
     <mat-icon class="text-[32px] w-8 h-8 flex items-center justify-center leading-none">{{ icon }}</mat-icon>
   </div>
-  <h3 class="m-0 mb-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ title }}</h3>
+  <h3 class="m-0 mb-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ title ?? i18n.t().ui.noRecords }}</h3>
   @if (message) {
     <p class="max-w-md m-0 mb-5 text-sm text-slate-500 dark:text-slate-400">{{ message }}</p>
   }

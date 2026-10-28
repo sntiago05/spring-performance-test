@@ -115,7 +115,7 @@
           [matSortDirection]="sortDirection()"
           (matSortChange)="onSortChange($event)"
           class="w-full bg-transparent"
-          aria-label="Support Tickets Table">
+          [attr.aria-label]="i18n.t().ui.ticketsTable">
 
           <!-- ID Column -->
           <ng-container matColumnDef="id">
@@ -224,7 +224,7 @@
         [pageIndex]="pageIndex()"
         [pageSizeOptions]="[10, 20, 50]"
         (page)="onPageChange($event)"
-        aria-label="Select page of tickets">
+        [attr.aria-label]="i18n.t().ui.selectPageTickets">
       </mat-paginator>
     }
   </mat-card>

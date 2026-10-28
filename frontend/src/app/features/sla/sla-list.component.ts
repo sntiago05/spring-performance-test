@@ -86,7 +86,7 @@ export class SlaListComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((updated: SlaPolicyResponse | null) => {
       if (updated) {
-        this.snackBar.open('SLA policy updated successfully', 'OK', { duration: 4000 });
+        this.snackBar.open(this.i18n.t().ui.slaUpdated, 'OK', { duration: 4000 });
         this.fetchPolicies();
       }
     });

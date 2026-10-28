@@ -13,12 +13,12 @@
         @for (tech of technicians(); track tech.id) {
           <mat-option [value]="tech.id">
             <span [class.font-semibold]="isCompatible(tech)" [class.text-emerald-700]="isCompatible(tech)" [class.dark:text-emerald-400]="isCompatible(tech)">
-              {{ tech.code }} - {{ tech.fullName }} ({{ tech.specialty }}, {{ tech.site }}, cap: {{ tech.maxActiveTickets }})
+              {{ tech.code }} - {{ tech.fullName }} ({{ tech.specialty }}, {{ tech.site }}, {{ i18n.t().ui.capAbbr }} {{ tech.maxActiveTickets }})
             </span>
           </mat-option>
         }
       </mat-select>
-      <mat-hint>Ticket Category: <strong>{{ data.ticket.category }}</strong> • Site: <strong>{{ data.ticket.site }}</strong></mat-hint>
+      <mat-hint>{{ i18n.t().ui.ticketCategoryLabel }} <strong>{{ data.ticket.category }}</strong> • {{ i18n.t().ui.siteColon }} <strong>{{ data.ticket.site }}</strong></mat-hint>
       @if (form.get('technicianId')?.hasError('required')) {
         <mat-error>{{ i18n.t().validation.required }}</mat-error>
       }
@@ -31,7 +31,7 @@
         matInput
         rows="4"
         formControlName="observations"
-        placeholder="Reason for reassignment or initial dispatch notes..."
+        [placeholder]="i18n.t().ui.reassignPlaceholder"
         maxlength="1000">
       </textarea>
       @if (form.get('observations')?.hasError('required')) {

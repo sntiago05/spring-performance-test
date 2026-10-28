@@ -80,14 +80,14 @@
 
           @if (t.firstResponseAt) {
             <div class="flex flex-col gap-0.5">
-              <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">First Response</span>
+              <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ i18n.t().ui.firstResponse }}</span>
               <span class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ t.firstResponseAt | localizedDate:'medium' }}</span>
             </div>
           }
 
           @if (t.resolvedAt) {
             <div class="flex flex-col gap-0.5">
-              <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Resolved At</span>
+              <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ i18n.t().ui.resolvedAt }}</span>
               <span class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ t.resolvedAt | localizedDate:'medium' }}</span>
             </div>
           }
@@ -137,7 +137,7 @@
           @if (t.technician) {
             <div class="flex flex-col gap-0.5 text-sm">
               <strong class="font-semibold text-slate-900 dark:text-slate-100">{{ t.technician.fullName }} ({{ t.technician.code }})</strong>
-              <span class="text-xs text-slate-500 dark:text-slate-400">Specialty: {{ t.technician.specialty }}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">{{ i18n.t().ui.specialtyLabel }} {{ t.technician.specialty }}</span>
             </div>
           } @else {
             <div class="flex items-center gap-2 italic text-sm text-slate-400 dark:text-slate-500">
@@ -181,12 +181,12 @@
                       }
 
                       <div class="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                        <span class="text-slate-500 dark:text-slate-400">By:</span>
+                        <span class="text-slate-500 dark:text-slate-400">{{ i18n.t().ui.byLabel }}</span>
                         <strong class="text-slate-800 dark:text-slate-200 ml-1">{{ entry.performedBy }}</strong>
                       </div>
 
                       @if (entry.observations) {
-                        <p class="mt-2 text-xs sm:text-sm italic leading-relaxed text-slate-700 dark:text-slate-300 bg-white/60 dark:bg-slate-900/40 p-2 rounded border border-slate-200/60 dark:border-slate-700/60">{{ entry.observations }}</p>
+                        <p class="mt-2 text-xs sm:text-sm italic leading-relaxed text-slate-700 dark:text-slate-300 bg-white/60 dark:bg-slate-900/40 p-2 rounded border border-slate-200/60 dark:border-slate-700/60">{{ entry.observations | historyNote }}</p>
                       }
                     </div>
                   </div>
@@ -205,24 +205,24 @@
               <div class="w-full overflow-x-auto">
                 <table mat-table [dataSource]="assignments()" class="w-full bg-transparent">
                   <ng-container matColumnDef="source">
-                    <th mat-header-cell *matHeaderCellDef>Source</th>
+                    <th mat-header-cell *matHeaderCellDef>{{ i18n.t().ui.sourceCol }}</th>
                     <td mat-cell *matCellDef="let a">
                       <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">{{ i18n.t().enums.sources[a.source] ?? a.source }}</span>
                     </td>
                   </ng-container>
 
                   <ng-container matColumnDef="technicianId">
-                    <th mat-header-cell *matHeaderCellDef>Technician ID</th>
+                    <th mat-header-cell *matHeaderCellDef>{{ i18n.t().ui.technicianIdCol }}</th>
                     <td mat-cell *matCellDef="let a" class="font-mono text-xs">#{{ a.technicianId }}</td>
                   </ng-container>
 
                   <ng-container matColumnDef="assignedBy">
-                    <th mat-header-cell *matHeaderCellDef>Assigned By</th>
+                    <th mat-header-cell *matHeaderCellDef>{{ i18n.t().ui.assignedByCol }}</th>
                     <td mat-cell *matCellDef="let a" class="text-sm">{{ a.assignedBy }}</td>
                   </ng-container>
 
                   <ng-container matColumnDef="assignedAt">
-                    <th mat-header-cell *matHeaderCellDef>Assigned At</th>
+                    <th mat-header-cell *matHeaderCellDef>{{ i18n.t().ui.assignedAtCol }}</th>
                     <td mat-cell *matCellDef="let a" class="text-xs text-slate-500 dark:text-slate-400">{{ a.assignedAt | localizedDate:'medium' }}</td>
                   </ng-container>
 
@@ -245,12 +245,12 @@
                   </ng-container>
 
                   <ng-container matColumnDef="active">
-                    <th mat-header-cell *matHeaderCellDef>Current Owner</th>
+                    <th mat-header-cell *matHeaderCellDef>{{ i18n.t().ui.currentOwnerCol }}</th>
                     <td mat-cell *matCellDef="let a">
                       @if (a.active) {
-                        <span class="inline-flex px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">ACTIVE</span>
+                        <span class="inline-flex px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">{{ i18n.t().ui.activeBadge }}</span>
                       } @else {
-                        <span class="text-xs text-slate-500 dark:text-slate-400">Previous</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400">{{ i18n.t().ui.previousBadge }}</span>
                       }
                     </td>
                   </ng-container>

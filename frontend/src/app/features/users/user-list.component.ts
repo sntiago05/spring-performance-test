@@ -147,9 +147,9 @@ export class UserListComponent implements OnInit {
 
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       data: {
-        title: `${isDeactivating ? 'Deactivate' : 'Activate'} User: ${user.fullName}`,
+        title: `${isDeactivating ? this.i18n.t().ui.deactivateUserTitle : this.i18n.t().ui.activateUserTitle}: ${user.fullName}`,
         message: confirmMsg,
-        confirmText: isDeactivating ? 'Deactivate' : 'Activate',
+        confirmText: isDeactivating ? this.i18n.t().ui.deactivate : this.i18n.t().ui.activate,
         isDestructive: isDeactivating
       }
     });

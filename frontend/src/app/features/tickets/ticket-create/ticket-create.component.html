@@ -2,7 +2,7 @@
   <div class="flex flex-wrap items-center justify-between gap-4">
     <div class="flex flex-col">
       <h1 class="m-0 mb-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{{ i18n.t().tickets.createTitle }}</h1>
-      <p class="m-0 text-sm text-slate-500 dark:text-slate-400">Register an IT incident or service request with automatic SLA calculation</p>
+      <p class="m-0 text-sm text-slate-500 dark:text-slate-400">{{ i18n.t().ui.createTicketSubtitle }}</p>
     </div>
     <a mat-button routerLink="/tickets">
       <mat-icon>arrow_back</mat-icon>
@@ -22,14 +22,14 @@
         <input
           matInput
           formControlName="title"
-          placeholder="e.g. Office Wi-Fi drops every few minutes"
+          [placeholder]="i18n.t().ui.titlePlaceholder"
           maxlength="150">
         <mat-hint align="end">{{ ticketForm.get('title')?.value?.length || 0 }}/150</mat-hint>
         @if (ticketForm.get('title')?.hasError('required')) {
           <mat-error>{{ i18n.t().validation.required }}</mat-error>
         }
         @if (ticketForm.get('title')?.hasError('minlength')) {
-          <mat-error>{{ i18n.t().validation.minLength }} (min. 5)</mat-error>
+          <mat-error>{{ i18n.t().validation.minLength }} ({{ i18n.t().ui.minAbbr }} 5)</mat-error>
         }
         @if (ticketForm.get('title')?.hasError('serverError')) {
           <mat-error>{{ ticketForm.get('title')?.getError('serverError') }}</mat-error>
@@ -70,7 +70,7 @@
           <input
             matInput
             formControlName="site"
-            placeholder="e.g. BOGOTA"
+            [placeholder]="i18n.t().ui.sitePlaceholder"
             maxlength="60">
           @if (ticketForm.get('site')?.hasError('required')) {
             <mat-error>{{ i18n.t().validation.required }}</mat-error>
@@ -85,7 +85,7 @@
           <input
             matInput
             formControlName="affectedAsset"
-            placeholder="e.g. AP-3F-02, LAPTOP-8812, ERP-FINANCE"
+            [placeholder]="i18n.t().ui.assetPlaceholder"
             maxlength="120">
           @if (ticketForm.get('affectedAsset')?.hasError('required')) {
             <mat-error>{{ i18n.t().validation.required }}</mat-error>
@@ -103,7 +103,7 @@
           matInput
           rows="6"
           formControlName="description"
-          placeholder="Describe what happened, error messages, and steps to reproduce..."
+          [placeholder]="i18n.t().ui.descriptionPlaceholder"
           maxlength="4000">
         </textarea>
         <mat-hint align="end">{{ ticketForm.get('description')?.value?.length || 0 }}/4000</mat-hint>
@@ -111,7 +111,7 @@
           <mat-error>{{ i18n.t().validation.required }}</mat-error>
         }
         @if (ticketForm.get('description')?.hasError('minlength')) {
-          <mat-error>{{ i18n.t().validation.minLength }} (min. 10)</mat-error>
+          <mat-error>{{ i18n.t().validation.minLength }} ({{ i18n.t().ui.minAbbr }} 10)</mat-error>
         }
         @if (ticketForm.get('description')?.hasError('serverError')) {
           <mat-error>{{ ticketForm.get('description')?.getError('serverError') }}</mat-error>
@@ -131,7 +131,7 @@
           } @else {
             <ng-container>
               <mat-icon>send</mat-icon>
-              <span>Register & Assign Ticket</span>
+              <span>{{ i18n.t().ui.registerAndAssign }}</span>
             </ng-container>
           }
         </button>

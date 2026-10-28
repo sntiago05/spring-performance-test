@@ -11,6 +11,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { forkJoin } from 'rxjs';
 import { TicketService } from '../../../core/services/ticket.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { HistoryNotePipe } from '../../../shared/pipes/history-note.pipe';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import {
   AssignmentResponse,
@@ -32,7 +33,7 @@ import { getValidNextStatuses } from '../utils/ticket-status-transitions';
 @Component({
   selector: 'app-ticket-detail',
   standalone: true,
-  imports: [
+  imports: [HistoryNotePipe, 
     CommonModule,
     RouterModule,
     MatCardModule,
